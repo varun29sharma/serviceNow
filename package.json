@@ -1,0 +1,27 @@
+{
+  "name": "triagenow",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "TriageNow — ServiceNow-themed student triage & routing (Track 1). Case · assignmentGroup · Assignment Rule · SLA target.",
+  "scripts": {
+    "setup": "npm --prefix server install && npm --prefix client install",
+    "seed": "npm --prefix server run seed",
+    "backtest": "node backtest/backtest.js",
+    "test": "npm --prefix server test",
+    "smoke": "npm --prefix server run smoke",
+    "sync:cases": "node scripts/syncBacktestCases.mjs",
+    "verify": "npm run sync:cases && npm run backtest && npm test && npm run smoke",
+    "build": "npm --prefix client run build",
+    "dev": "npm --prefix server run dev & npm --prefix client run dev",
+    "dev:server": "npm --prefix server run dev",
+    "dev:client": "npm --prefix client run dev",
+    "start": "npm --prefix server start"
+  },
+  "keywords": [
+    "servicenow",
+    "hackathon",
+    "triage"
+  ],
+  "license": "MIT"
+}

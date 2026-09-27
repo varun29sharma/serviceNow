@@ -1,0 +1,217 @@
+/* ==========================================================================
+   TriageNow — Design Tokens
+   --------------------------------------------------------------------------
+   Art direction: "Editorial Case Desk", after studiors.be.
+
+   Canvas is a warm near-black; text is bone; meta text is warm gray.
+   Two type voices: Cabinet Grotesk for display, General Sans for UI, with
+   Zodiak (serif) reserved for long-form student words. Controls are pill-
+   shaped; surfaces are sharp with hairline borders. Chroma is spent almost
+   exclusively on meaning — urgency, status, sentiment, priority — never on
+   decoration. The ServiceNow green remains as the single brand signal.
+
+   Every colour, space, radius, elevation and duration in the app resolves to
+   a token here. Do not write raw hex or px values anywhere else — see
+   docs/DESIGN.md ("Rules") for why.
+
+   Naming: primitives (--ink-*, --bone-*, --signal*) are raw values. Semantic
+   roles (--canvas, --panel, --text-hi, --urg-h ...) are what components
+   consume. Components must use semantic roles, never primitives.
+   ========================================================================== */
+
+:root {
+  /* ---------------------------------------------------------------------
+     Primitive surfaces — warm near-black, ordered by luminance.
+     Hue stays in the 40–60° ochre range so greys read warm, not blue.
+     --------------------------------------------------------------------- */
+  --ink-950: #0e0e0d; /* canvas — studiors' exact body background */
+  --ink-925: #121210;
+  --ink-900: #161614; /* shell / topbar / nav */
+  --ink-850: #1b1b19;
+  --ink-800: #20201e; /* panel — default card background */
+  --ink-750: #262623;
+  --ink-700: #2e2e2a; /* raised panel / hover state */
+  --ink-600: #3a3a35;
+
+  /* The near-black used ON bone surfaces (inverted panels, dark buttons) */
+  --carbon: #090908;
+
+  /* ---------------------------------------------------------------------
+     Bone — the light. Text, borders, inverted surfaces.
+     --------------------------------------------------------------------- */
+  --bone: #ece9e2;      /* studiors' exact foreground */
+  --bone-dim: #b9b6ae;
+  --bone-faint: #8d8a83; /* studiors' meta gray */
+
+  /* ---------------------------------------------------------------------
+     Hairlines — on dark, separation is a light line, not a shadow
+     --------------------------------------------------------------------- */
+  --line-1: rgba(236, 233, 226, 0.07);  /* subtle divider */
+  --line-2: rgba(236, 233, 226, 0.12);  /* card border */
+  --line-3: rgba(236, 233, 226, 0.28);  /* strong border / control outline */
+  --line-4: rgba(236, 233, 226, 0.55);  /* emphasis rule, hover border */
+
+  /* ---------------------------------------------------------------------
+     Text — four levels, all contrast-checked against --ink-800
+     --------------------------------------------------------------------- */
+  --text-hi: var(--bone);        /* 14.9:1 on panel */
+  --text-mid: var(--bone-dim);   /*  8.6:1 on panel */
+  --text-lo: var(--bone-faint);  /*  5.0:1 on panel — meta / labels */
+  --text-xlo: #5f5c55;
+
+  /* ---------------------------------------------------------------------
+     Signal — ServiceNow green remains the brand signal colour.
+     Used sparingly: primary CTA fill, live indicators, success.
+     --------------------------------------------------------------------- */
+  --signal: #62d98c;
+  --signal-strong: #3fd97a;
+  --signal-ink: #07130b; /* text on a filled signal chip */
+  --signal-soft: rgba(98, 217, 140, 0.12);
+  --signal-line: rgba(98, 217, 140, 0.38);
+  --signal-glow: rgba(98, 217, 140, 0.28);
+
+  /* Secondary voice — warm ochre accent for student-facing affordances.
+     studiors pairs its bone with warm metal tones; this is that pairing. */
+  --accent: #d9b36a;
+  --accent-soft: rgba(217, 179, 106, 0.12);
+  --accent-line: rgba(217, 179, 106, 0.4);
+
+  /* ---------------------------------------------------------------------
+     Urgency — the triage output. Saturated, unmistakable, never decorative.
+     --------------------------------------------------------------------- */
+  --urg-h: #e5484d;
+  --urg-h-bg: rgba(229, 72, 77, 0.12);
+  --urg-h-line: rgba(229, 72, 77, 0.42);
+  --urg-m: #d9a03f;
+  --urg-m-bg: rgba(217, 160, 63, 0.12);
+  --urg-m-line: rgba(217, 160, 63, 0.42);
+  --urg-l: #6fcf97;
+  --urg-l-bg: rgba(111, 207, 151, 0.1);
+  --urg-l-line: rgba(111, 207, 151, 0.36);
+
+  /* ---------------------------------------------------------------------
+     Case lifecycle — the four mandated statuses
+     New / Assigned / In Progress / Resolved
+     --------------------------------------------------------------------- */
+  --st-new: #7fb3e3;
+  --st-new-bg: rgba(127, 179, 227, 0.12);
+  --st-assigned: #b7a4e3;
+  --st-assigned-bg: rgba(183, 164, 227, 0.12);
+  --st-inprogress: #d9a03f;
+  --st-inprogress-bg: rgba(217, 160, 63, 0.12);
+  --st-resolved: #6fcf97;
+  --st-resolved-bg: rgba(111, 207, 151, 0.1);
+
+  /* ---------------------------------------------------------------------
+     Sentiment — deterministic rules-engine classification
+     --------------------------------------------------------------------- */
+  --snt-severe: #e5484d;
+  --snt-distressed: #e07a45;
+  --snt-concerned: #d9b36a;
+  --snt-routine: #6fcf97;
+
+  /* Priority (P1–P4 from the impact x urgency matrix) */
+  --pri-1: #e5484d;
+  --pri-2: #e07a45;
+  --pri-3: #d9b36a;
+  --pri-4: #8d8a83;
+
+  /* ---------------------------------------------------------------------
+     Radii — the studiors signature: pills for controls, sharp for surfaces.
+     --------------------------------------------------------------------- */
+  --r-xs: 3px;
+  --r-sm: 5px;
+  --r-md: 8px;
+  --r-lg: 12px;
+  --r-xl: 18px;
+  --r-pill: 99px;  /* every button, chip, tab, badge */
+  --r-full: 999px; /* alias kept for existing rules */
+
+  /* ---------------------------------------------------------------------
+     Space — 4px base rhythm. Every gap/padding comes from here.
+     --------------------------------------------------------------------- */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-7: 32px;
+  --s-8: 40px;
+  --s-9: 48px;
+  --s-10: 64px;
+  --s-11: 88px;
+  --s-12: 128px; /* studiors' section rhythm */
+
+  /* ---------------------------------------------------------------------
+     Elevation — studiors is a flat, editorial world: hairlines over shadows.
+     Keep faint inner highlights for depth on interactive controls only.
+     --------------------------------------------------------------------- */
+  --e-1: inset 0 1px 0 rgba(236, 233, 226, 0.04);
+  --e-2: inset 0 1px 0 rgba(236, 233, 226, 0.05), 0 1px 2px rgba(0, 0, 0, 0.35);
+  --e-3: inset 0 1px 0 rgba(236, 233, 226, 0.06), 0 10px 30px -10px rgba(0, 0, 0, 0.55);
+  --e-glow: 0 0 0 1px var(--signal-line), 0 0 24px -6px var(--signal-glow);
+
+  /* ---------------------------------------------------------------------
+     Type — the studiors trio, self-hosted from Fontshare.
+     Cabinet Grotesk: display / headlines (800–900).
+     General Sans: all UI text (500–700).
+     Zodiak: editorial serif for student quotes & long-form.
+     Mono unchanged: identifiers, sys_ids, SLA math.
+     --------------------------------------------------------------------- */
+  --font-display: "Cabinet Grotesk", "General Sans", -apple-system, sans-serif;
+  --font-ui: "General Sans", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Inter, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-serif: "Zodiak", Georgia, "Times New Roman", serif;
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, "JetBrains Mono",
+    "IBM Plex Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+  --t-kicker: 10.5px;
+  --t-label: 11.5px;
+  --t-mono: 12px;
+  --t-body: 13.5px;
+  --t-body-lg: 15px;
+  --t-title: 20px;
+  --t-display: 32px;
+  --t-hero: 44px;
+
+  /* ---------------------------------------------------------------------
+     Motion — durations and the single easing curve from DESIGN.md
+     --------------------------------------------------------------------- */
+  --dur-micro: 120ms;
+  --dur-state: 200ms;
+  --dur-surface: 320ms;
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+
+  /* ---------------------------------------------------------------------
+     Layout
+     --------------------------------------------------------------------- */
+  --shell-max: 1440px;
+  --shell-pad: 24px;
+
+  /* Ambient aura hue — driven from app state, animated in styles.css.
+     Calm warm-black -> amber -> red as the highest live urgency rises. */
+  --aura-a: #26221a;
+  --aura-b: #14130f;
+  --aura-ink: 0;
+  --aura-opacity: 0.5;
+
+  /* Presentation mode (low-contrast rooms): lifts panel luminance a step. */
+  --boost: 0%;
+}
+
+/* Presentation toggle — see the topbar control. Raises every surface one
+   luminance step so dark UI survives a washed-out projector. */
+:root[data-presentation="on"] {
+  --ink-950: #141412;
+  --ink-925: #191917;
+  --ink-900: #1f1f1c;
+  --ink-850: #252522;
+  --ink-800: #2b2b27;
+  --ink-750: #33332e;
+  --ink-700: #3c3c36;
+  --ink-600: #4a4a42;
+  --text-mid: #cbc8c0;
+  --text-lo: #a3a099;
+  --aura-opacity: 0.38;
+}

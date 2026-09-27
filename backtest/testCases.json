@@ -1,0 +1,221 @@
+{
+  "description": "TriageNow backtest set — labeled Cases for grid-searching triage configs. 'expectedUrgency' is the ground truth team D/ops agreed on; the harness scores triageRequest against these. High labels exist in every category so no keyword-free baseline can free-ride.",
+  "cases": [
+    {
+      "studentAlias": "Backtest 01",
+      "category": "Mental Health",
+      "description": "I am having thoughts of suicide and don't know what to do.",
+      "expectedUrgency": "High"
+    },
+    {
+      "studentAlias": "Backtest 02",
+      "category": "Mental Health",
+      "description": "I had a panic attack in class today and my chest still hurts.",
+      "expectedUrgency": "High"
+    },
+    {
+      "studentAlias": "Backtest 03",
+      "category": "Mental Health",
+      "description": "I keep thinking about hurting myself.",
+      "expectedUrgency": "High"
+    },
+    {
+      "studentAlias": "Backtest 04",
+      "category": "Mental Health",
+      "description": "I feel really anxious about midterms and slightly depressed lately.",
+      "expectedUrgency": "Medium"
+    },
+    {
+      "studentAlias": "Backtest 05",
+      "category": "Mental Health",
+      "description": "I want to talk to someone about stress from my part-time job.",
+      "expectedUrgency": "Medium"
+    },
+    {
+      "studentAlias": "Backtest 06",
+      "category": "Mental Health",
+      "description": "Just curious what workshops the counseling center runs this semester.",
+      "expectedUrgency": "Low"
+    },
+    {
+      "studentAlias": "Backtest 07",
+      "category": "Academic",
+      "description": "I am failing three classes and might drop out if this semester goes on like this.",
+      "expectedUrgency": "High"
+    },
+    {
+      "studentAlias": "Backtest 08",
+      "category": "Academic",
+      "description": "My professor said I am failing and I am scared of academic probation.",
+      "expectedUrgency": "Medium"
+    },
+    {
+      "studentAlias": "Backtest 09",
+      "category": "Academic",
+      "description": "I am behind on readings and my grades are slipping.",
+      "expectedUrgency": "Medium"
+    },
+    {
+      "studentAlias": "Backtest 10",
+      "category": "Academic",
+      "description": "I have been sick and fell behind in one course. Need a study plan.",
+      "expectedUrgency": "Medium"
+    },
+    {
+      "studentAlias": "Backtest 11",
+      "category": "Academic",
+      "description": "When is the deadline to switch from pass-fail to a letter grade?",
+      "expectedUrgency": "Low"
+    },
+    {
+      "studentAlias": "Backtest 12",
+      "category": "Academic",
+      "description": "Looking for a tutor for intro statistics before finals.",
+      "expectedUrgency": "Low"
+    },
+    {
+      "studentAlias": "Backtest 13",
+      "category": "Financial",
+      "description": "I got a final notice from the bursar and my account is past due. I can't pay this month.",
+      "expectedUrgency": "High"
+    },
+    {
+      "studentAlias": "Backtest 14",
+      "category": "Financial",
+      "description": "My electricity got a shut off notice and my aid refund is late.",
+      "expectedUrgency": "High"
+    },
+    {
+      "studentAlias": "Backtest 15",
+      "category": "Financial",
+      "description": "I can't eat properly until my meal plan resets — is there any emergency food help?",
+      "expectedUrgency": "High"
+    },
+    {
+      "studentAlias": "Backtest 16",
+      "category": "Financial",
+      "description": "My tuition payment is overdue and I am worried about a hold on registration.",
+      "expectedUrgency": "Medium"
+    },
+    {
+      "studentAlias": "Backtest 17",
+      "category": "Financial",
+      "description": "Bills are piling up and I don't understand my financial aid letter.",
+      "expectedUrgency": "Medium"
+    },
+    {
+      "studentAlias": "Backtest 18",
+      "category": "Financial",
+      "description": "How do I apply for the textbook scholarship for next year?",
+      "expectedUrgency": "Low"
+    },
+    {
+      "studentAlias": "Backtest 19",
+      "category": "Housing",
+      "description": "I got evicted yesterday and have no place to sleep tonight.",
+      "expectedUrgency": "High"
+    },
+    {
+      "studentAlias": "Backtest 20",
+      "category": "Housing",
+      "description": "Couch surfing with friends after our lease ended and I am basically homeless.",
+      "expectedUrgency": "High"
+    },
+    {
+      "studentAlias": "Backtest 21",
+      "category": "Housing",
+      "description": "My landlord handed me an eviction notice for next month.",
+      "expectedUrgency": "Medium"
+    },
+    {
+      "studentAlias": "Backtest 22",
+      "category": "Housing",
+      "description": "My roommate moved out and I can't afford the rent alone — what are my options?",
+      "expectedUrgency": "Medium"
+    },
+    {
+      "studentAlias": "Backtest 23",
+      "category": "Housing",
+      "description": "There is mold in the bathroom. It's gross but not urgent — who do I report it to?",
+      "expectedUrgency": "Medium"
+    },
+    {
+      "studentAlias": "Backtest 24",
+      "category": "Housing",
+      "description": "How does the room swap process work for next semester?",
+      "expectedUrgency": "Low"
+    },
+    {
+      "studentAlias": "Backtest 25",
+      "category": "Other",
+      "description": "I feel completely lost and honestly can't go on like this — no idea who to even ask.",
+      "expectedUrgency": "High"
+    },
+    {
+      "studentAlias": "Backtest 26",
+      "category": "Other",
+      "description": "Running out of food and money until the end of the month and I don't know where to turn.",
+      "expectedUrgency": "High"
+    },
+    {
+      "studentAlias": "Backtest 27",
+      "category": "Other",
+      "description": "I lost my student ID and also feel kind of anxious about asking for help.",
+      "expectedUrgency": "Medium"
+    },
+    {
+      "studentAlias": "Backtest 28",
+      "category": "Other",
+      "description": "Which office handles transportation passes for commuters?",
+      "expectedUrgency": "Low"
+    },
+    {
+      "studentAlias": "Backtest 29",
+      "category": "Other",
+      "description": "Where can I print posters for my student club?",
+      "expectedUrgency": "Low"
+    },
+    {
+      "studentAlias": "Backtest 30",
+      "category": "Mental Health",
+      "description": "Exam week is stressful. Tips for managing time would help.",
+      "expectedUrgency": "Low"
+    },
+    {
+      "studentAlias": "Backtest 31",
+      "category": "Academic",
+      "description": "I have been placed on academic probation and need an urgent advising appointment to plan my recovery.",
+      "expectedUrgency": "High"
+    },
+    {
+      "studentAlias": "Backtest 32",
+      "category": "Financial",
+      "description": "I lost my part-time job and can't pay rent next month.",
+      "expectedUrgency": "Medium"
+    },
+    {
+      "studentAlias": "Backtest 33",
+      "category": "Housing",
+      "description": "My apartment heating broke weeks ago and the landlord is ignoring me.",
+      "expectedUrgency": "Medium"
+    },
+    {
+      "studentAlias": "Backtest 34",
+      "category": "Academic",
+      "description": "I have a chemistry midterm tomorrow that I feel completely unprepared for.",
+      "expectedUrgency": "Medium"
+    },
+    {
+      "studentAlias": "Backtest 35",
+      "category": "Mental Health",
+      "description": "My friend mentioned self harm and I want advice on how to support them.",
+      "expectedUrgency": "High"
+    },
+    {
+      "studentAlias": "Backtest 36",
+      "category": "Financial",
+      "description": "Is the campus food pantry open on weekends?",
+      "expectedUrgency": "Low"
+    }
+  ]
+}

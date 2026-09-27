@@ -1,0 +1,23 @@
+{
+  "name": "triagenow-server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "TriageNow Express API — Case model, configurable Assignment Rule, priority matrix, rules + deflection routes",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "seed": "node src/seed.js",
+    "smoke": "node scripts/smoke.mjs",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "mongoose": "^8.9.5"
+  },
+  "devDependencies": {
+    "mongodb-memory-server": "^10.1.3"
+  }
+}

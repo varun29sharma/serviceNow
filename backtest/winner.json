@@ -1,0 +1,45 @@
+{
+  "categoryBaseUrgency": {
+    "Mental Health": "Low",
+    "Academic": "Low",
+    "Financial": "Low",
+    "Housing": "Low",
+    "Other": "Low"
+  },
+  "keywords": {
+    "suicide": 3,
+    "kill myself": 3,
+    "self harm": 3,
+    "hurt myself": 3,
+    "cant go on": 3,
+    "evicted": 2,
+    "homeless": 2,
+    "no place to sleep": 2,
+    "cant eat": 2,
+    "hungry": 2,
+    "out of food": 2,
+    "panic attack": 2,
+    "hurting": 2,
+    "final notice": 2,
+    "shut off": 2,
+    "failing": 1,
+    "overdue": 1,
+    "dropping out": 1,
+    "drop out": 1,
+    "eviction": 1,
+    "past due": 1,
+    "bills": 1,
+    "counseling": 1,
+    "anxious": 1,
+    "depressed": 1,
+    "behind": 1,
+    "unprepared": 1,
+    "probation": 1,
+    "urgent": 1,
+    "ignoring": 1
+  },
+  "thresholds": {
+    "high": 2,
+    "medium": 1
+  }
+}
