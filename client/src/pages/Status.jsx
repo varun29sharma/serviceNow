@@ -103,7 +103,7 @@ export default function Status() {
   if (error) {
     return (
       <div className="notice error">
-        {error} — <Link to="/">return to the Student Portal</Link>
+        {error} — <Link to="/submit">return to the Student Portal</Link>
       </div>
     );
   }
@@ -279,7 +279,7 @@ export default function Status() {
       </div>
 
       <div className="status-footer-bar">
-        <Link className="secondary btn-sm" to="/">
+        <Link className="secondary btn-sm" to="/submit">
           ← Raise another Case
         </Link>
         <Link className="secondary btn-sm" to="/queue/All">
