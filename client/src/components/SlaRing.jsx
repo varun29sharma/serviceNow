@@ -9,7 +9,7 @@
  * The numeric readout uses tabular mono so a ticking countdown does not reflow
  * its own width — see DESIGN.md rule 2.
  */
-import { useEffect, useState } from 'react';
+import { useNow } from '../lib/useNow.js';
 
 const WINDOW_HOURS = { High: 2, Medium: 24, Low: 72 };
 
@@ -29,16 +29,12 @@ function formatRemaining(ms) {
 }
 
 export default function SlaRing({ slaTarget, urgency, status, size = 64, label = 'SLA target' }) {
-  const [, forceTick] = useState(0);
-
-  // Re-render once a minute so the countdown stays honest on a static screen.
-  useEffect(() => {
-    const id = setInterval(() => forceTick((n) => n + 1), 60000);
-    return () => clearInterval(id);
-  }, []);
+  // The SHARED clock, so the ring and the pills in the same queue can never
+  // disagree about how long is left.
+  const now = useNow();
 
   const totalMs = (WINDOW_HOURS[urgency] || 72) * 60 * 60 * 1000;
-  const remaining = new Date(slaTarget).getTime() - Date.now();
+  const remaining = new Date(slaTarget).getTime() - now;
   const resolved = status === 'Resolved';
   const overdue = !resolved && remaining < 0;
   const atRisk = !resolved && !overdue && remaining < 60 * 60 * 1000;

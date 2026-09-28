@@ -8,6 +8,7 @@
     "dev": "vite",
     "dev:demo": "vite --open /?demo=1",
     "build": "vite build",
+    "test": "node --test",
     "preview": "vite preview"
   },
   "dependencies": {

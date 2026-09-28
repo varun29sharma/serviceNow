@@ -1,5 +1,21 @@
+/**
+ * App shell.
+ *
+ * Three jobs, and the third is new:
+ *
+ *   1. Render the role-aware navigation. The nav is now derived from the
+ *      session, so a student never sees an "Assignment Rules" link and an
+ *      anonymous visitor is never offered a queue. The previous build showed
+ *      every staff surface to everyone.
+ *   2. Report the connection HONESTLY. The badge reports whether the API
+ *      actually answered, not which backend was requested. When the probe fails
+ *      the app falls back to the in-browser engine and says so, with a
+ *      Reconnect control — this is the fix for "the LIVE API isn't working".
+ *   3. Hold a boot screen until that probe settles, so no page ever mounts
+ *      against a backend that turns out not to exist.
+ */
 import { useEffect, useState } from 'react';
-import { Routes, Route, NavLink, useNavigate } from 'react-router-dom';
+import { Link, NavLink, Route, Routes, useNavigate } from 'react-router-dom';
 
 import Home from './pages/Home.jsx';
 import Submit from './pages/Submit.jsx';
@@ -7,35 +23,111 @@ import Status from './pages/Status.jsx';
 import Queue from './pages/Queue.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Rules from './pages/Rules.jsx';
+import StudentHome from './pages/StudentHome.jsx';
+import NotFound from './pages/NotFound.jsx';
+import LoginIndex from './pages/login/LoginIndex.jsx';
+import StudentLogin from './pages/login/StudentLogin.jsx';
+import MediatorLogin from './pages/login/MediatorLogin.jsx';
+import ProviderLogin from './pages/login/ProviderLogin.jsx';
 
 import Aura from './components/Aura.jsx';
-import { isDemoMode } from './api.js';
+import { useAuth } from './auth/AuthContext.jsx';
+import RequireRole from './auth/RequireRole.jsx';
+import { ROLE, ROLE_META } from './auth/roles.js';
 import { resetDemoData } from './demoApi.js';
 import { useLiveUrgency } from './lib/liveStatus.js';
 import { readPresentationMode, setPresentationMode } from './lib/motion.js';
+import {
+  MODE,
+  chooseMode,
+  describeConnection,
+  reconnect,
+  useConnection,
+} from './lib/connection.js';
+
+/** The links each role is allowed to see. Derived, not filtered ad hoc. */
+function navLinksFor(session) {
+  if (!session) {
+    return [
+      { to: '/', label: 'Home', end: true },
+      { to: '/submit', label: 'Raise a Case' },
+      { to: '/login', label: 'Sign in' },
+    ];
+  }
+
+  if (session.role === ROLE.STUDENT) {
+    return [
+      { to: '/', label: 'Home', end: true },
+      { to: '/student', label: 'My Cases' },
+      { to: '/submit', label: 'Raise a Case' },
+    ];
+  }
+
+  if (session.role === ROLE.MEDIATOR) {
+    return [
+      { to: '/', label: 'Home', end: true },
+      { to: '/queue/All', label: 'Agent Workspace' },
+      { to: '/rules', label: 'Assignment Rules' },
+      { to: '/dashboard', label: 'Dashboard' },
+    ];
+  }
+
+  // Provider — scoped to one assignmentGroup, and no leadership analytics.
+  return [
+    { to: '/', label: 'Home', end: true },
+    { to: `/queue/${encodeURIComponent(session.group || 'All')}`, label: `${session.group} queue` },
+  ];
+}
+
+function BootScreen() {
+  return (
+    <div className="boot-screen">
+      <div className="boot-mark">NOW</div>
+      <div className="boot-text">
+        Looking for the TriageNow API<span className="boot-dots" aria-hidden="true" />
+      </div>
+      <div className="boot-sub">
+        If nothing answers, the in-browser engine takes over automatically — you will not be left on
+        an error page.
+      </div>
+    </div>
+  );
+}
 
 export default function App() {
-  const demo = isDemoMode();
   const navigate = useNavigate();
+  const { session, logout, home } = useAuth();
+  const connection = useConnection();
+  const { mode, reachable } = connection;
+  const offline = mode === MODE.DEMO;
+
   const [presentation, setPresentation] = useState(readPresentationMode());
+  const [dismissedBanner, setDismissedBanner] = useState(false);
   const urgency = useLiveUrgency();
 
   useEffect(() => {
     setPresentationMode(presentation);
   }, [presentation]);
 
-  function toggleDemoMode() {
-    const url = new URL(window.location.href);
-    // The force flag survives a reload; the query string does not.
-    try {
-      if (demo) sessionStorage.removeItem('triagenow.demo.force');
-      else sessionStorage.setItem('triagenow.demo.force', '1');
-    } catch {
-      /* storage unavailable */
-    }
-    url.searchParams.delete('demo');
-    url.hash = demo ? '#/' : '#/?demo=1';
-    window.location.href = url.toString();
+  const status = describeConnection(connection);
+  const links = navLinksFor(session);
+
+  if (!connection.checked) {
+    return (
+      <div className="app">
+        <Aura urgency="None" live={false} />
+        <BootScreen />
+      </div>
+    );
+  }
+
+  async function switchMode() {
+    await chooseMode(offline ? MODE.LIVE : MODE.DEMO);
+  }
+
+  async function retryConnection() {
+    setDismissedBanner(false);
+    await reconnect();
   }
 
   return (
@@ -55,20 +147,40 @@ export default function App() {
           </div>
 
           <div className="topbar-center-status">
-            <span className="pulse-green-dot" />
+            <span className={`pulse-green-dot${offline ? ' dot-idle' : ''}`} />
             <span className="instance-text">
-              Deterministic rules engine · no model calls · {urgency === 'None' ? 'queue clear' : `peak urgency ${urgency}`}
+              Deterministic rules engine · no model calls ·{' '}
+              {urgency === 'None' ? 'queue clear' : `peak urgency ${urgency}`}
             </span>
           </div>
 
           <nav className="nav">
-            <NavLink to="/" end>
-              Home
-            </NavLink>
-            <NavLink to="/submit">Student Portal</NavLink>
-            <NavLink to="/queue/All">Agent Workspace</NavLink>
-            <NavLink to="/dashboard">Dashboard</NavLink>
-            <NavLink to="/rules">Assignment Rules</NavLink>
+            {links.map((link) => (
+              <NavLink key={link.to} to={link.to} end={link.end}>
+                {link.label}
+              </NavLink>
+            ))}
+
+            {session && (
+              <span className="session-chip" title={`Signed in as ${session.name}`}>
+                <span className="session-chip-role">{ROLE_META[session.role]?.label}</span>
+                <span className="session-chip-name">{session.name}</span>
+                {session.group && <span className="session-chip-group">{session.group}</span>}
+              </span>
+            )}
+
+            {session && (
+              <button
+                type="button"
+                className="nav-action"
+                onClick={() => {
+                  logout();
+                  navigate('/');
+                }}
+              >
+                Sign out
+              </button>
+            )}
 
             <button
               type="button"
@@ -82,46 +194,111 @@ export default function App() {
 
             <button
               type="button"
-              className={`mode-badge ${demo ? 'demo-active' : 'live-active'}`}
-              onClick={toggleDemoMode}
-              title="Switch between the Express API and the in-browser engine"
+              className={`mode-badge mode-${status.tone}`}
+              onClick={switchMode}
+              title={`${status.title} — click to switch`}
             >
-              {demo ? '🟡 Offline engine' : '🟢 Live API'}
+              {status.short}
             </button>
           </nav>
         </div>
       </header>
 
-      {demo && (
-        <div className="demo-banner">
-          <span>
-            <strong>Offline engine active:</strong> the Assignment Rule, priority matrix and
-            backtest scoring run in the browser against 13 seeded Cases and a 7-day deflection
-            history. No server, no network.
+      {/* Connection banner: only when it is worth explaining something. */}
+      {offline && !dismissedBanner && (
+        <div className={`conn-banner conn-banner-${status.tone}`}>
+          <span className="conn-banner-text">{status.detail}</span>
+          <span className="conn-banner-actions">
+            {reachable === 'unreachable' && (
+              <button className="ghost conn-btn" type="button" onClick={retryConnection}>
+                ↻ Reconnect
+              </button>
+            )}
+            <button
+              className="ghost conn-btn"
+              type="button"
+              onClick={() => {
+                resetDemoData();
+                window.location.reload();
+              }}
+            >
+              Reset demo data
+            </button>
+            <button
+              className="ghost conn-btn"
+              type="button"
+              onClick={() => setDismissedBanner(true)}
+              aria-label="Dismiss connection notice"
+            >
+              ✕
+            </button>
           </span>
-          <button
-            className="ghost demo-reset"
-            type="button"
-            onClick={() => {
-              resetDemoData();
-              window.location.reload();
-            }}
-          >
-            Reset demo data
-          </button>
         </div>
       )}
 
       <main className="main">
         <Routes>
+          {/* Public */}
           <Route path="/" element={<Home />} />
+          <Route path="/login" element={<LoginIndex />} />
+          <Route path="/login/student" element={<StudentLogin />} />
+          <Route path="/login/mediator" element={<MediatorLogin />} />
+          <Route path="/login/provider" element={<ProviderLogin />} />
+
+          {/* Public on purpose: a person in crisis must never meet a login wall.
+              The crisis-safety rule in Submit.jsx says a blocked form is the
+              worst outcome, so intake stays open to everyone. */}
           <Route path="/submit" element={<Submit />} />
           <Route path="/status/:id" element={<Status />} />
-          <Route path="/queue/:group" element={<Queue />} />
-          <Route path="/queue" element={<Queue />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/rules" element={<Rules />} />
-          <Route path="*" element={<Home />} />
+
+          {/* Student-only */}
+          <Route
+            path="/student"
+            element={
+              <RequireRole allow={[ROLE.STUDENT]}>
+                <StudentHome />
+              </RequireRole>
+            }
+          />
+
+          {/* Staff: mediator and providers */}
+          <Route
+            path="/queue"
+            element={
+              <RequireRole allow={[ROLE.MEDIATOR, ROLE.PROVIDER]}>
+                <Queue />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/queue/:group"
+            element={
+              <RequireRole allow={[ROLE.MEDIATOR, ROLE.PROVIDER]}>
+                <Queue />
+              </RequireRole>
+            }
+          />
+
+          {/* Mediator only */}
+          <Route
+            path="/dashboard"
+            element={
+              <RequireRole allow={[ROLE.MEDIATOR]}>
+                <Dashboard />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/rules"
+            element={
+              <RequireRole allow={[ROLE.MEDIATOR]}>
+                <Rules />
+              </RequireRole>
+            }
+          />
+
+          {/* A real 404, not a silent redirect to Home. */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
 
@@ -134,6 +311,17 @@ export default function App() {
           <div className="footer-vocab">
             Statuses strictly: <code>New</code> · <code>Assigned</code> · <code>In Progress</code> ·{' '}
             <code>Resolved</code>
+            {session ? (
+              <>
+                {' · '}
+                <Link to={home}>My portal</Link>
+              </>
+            ) : (
+              <>
+                {' · '}
+                <Link to="/login">Sign in</Link>
+              </>
+            )}
           </div>
         </div>
       </footer>

@@ -125,13 +125,30 @@ export function findDeflectionArticles(description, category) {
 }
 
 /**
+ * The crisis lexicon — in ONE place, on purpose.
+ *
+ * The student intake form used to carry its own copy of this regex, so the
+ * crisis banner the student saw and the `crisisDetected` flag the Case was
+ * routed on could disagree. They cannot now: both call `detectCrisis()`.
+ *
+ * Apostrophes are stripped before matching, exactly as the Assignment Rule
+ * does, so "can't go on" and "cant go on" are the same disclosure.
+ */
+export const CRISIS_PATTERN =
+  /suicide|kill myself|self harm|hurt myself|cant go on|want to die|end my life|no reason to live/;
+
+export function detectCrisis(description) {
+  const text = String(description || '').toLowerCase().replace(/['’]/g, '');
+  return CRISIS_PATTERN.test(text);
+}
+
+/**
  * Semantic intent, crisis sentiment detection, and risk analysis.
  */
 export function analyzeCaseIntent(description, category) {
   const text = String(description || '').toLowerCase();
 
-  const isSevereCrisis =
-    /suicide|kill myself|self harm|hurt myself|cant go on|want to die|end my life/i.test(text);
+  const isSevereCrisis = detectCrisis(description);
   const isDistressed =
     /panic attack|evicted|homeless|no place to sleep|cant eat|hungry|starving|shut off|final notice|unlivable/i.test(text);
   const isConcerned =
@@ -195,6 +212,32 @@ export function analyzeCaseIntent(description, category) {
     crisisDetected: isSevereCrisis,
     playbook: playbooks[category] || playbooks.Other,
   };
+}
+
+/**
+ * The category a description *reads as*, per the intent the engine already
+ * extracted. Words alone never route a Case — the category the student picked
+ * does — so this exists purely to catch the mismatch out loud: the sandbox on
+ * the landing page uses it to say "your words read as Housing, but you filed
+ * this under Academic, so the Assignment Rule sent it to Academic Advising".
+ *
+ * Kept next to the intent strings it maps, so the two cannot drift apart.
+ */
+export const INTENT_CATEGORY = {
+  'Immediate Crisis Intervention & Safety Outreach': 'Mental Health',
+  'Urgent Psychological Support & Counseling': 'Mental Health',
+  'Emergency Safe Shelter & Rapid Housing Placement': 'Housing',
+  'Financial Hardship & Administrative Hold Relief': 'Financial',
+  'Academic Standing Intervention & Tutoring Recovery': 'Academic',
+};
+
+/**
+ * suggestedCategory(description, category) -> the category the words imply, or
+ * null when they say nothing decisive ('General Student Inquiries & Support').
+ */
+export function suggestedCategory(description, category) {
+  const { intent } = analyzeCaseIntent(description, category);
+  return INTENT_CATEGORY[intent] || null;
 }
 
 /**

@@ -164,8 +164,10 @@ One curve, always: `--ease: cubic-bezier(.22,.61,.36,1)`.
 - Anything above 400ms.
 
 **`prefers-reduced-motion: reduce` is honoured globally**: all durations
-collapse to 1ms, the aura stops animating, pulses become static, and stagger
-is removed. The `#/design` gallery has a toggle so the whole team can check.
+collapse to 1ms, the aura stops animating, pulses become static, and stagger is
+removed. `lib/motion.js` is the single place the decision is made, because CSS
+media queries cannot reach JS-driven motion (SMIL, `requestAnimationFrame`
+counters, the sandbox's self-typing scenarios).
 
 ---
 
@@ -175,12 +177,15 @@ These are the wow budget. Each one has to *mean* something.
 
 1. **Ambient urgency aura** — warm ochre-to-red radial gradients behind the
    shell whose hue moves calm bone-warmth -> amber -> red with the highest live
-   urgency. Driven by the `--aura-*` custom properties from app state.
+   urgency. Driven by the `--aura-<urgency>-*` custom properties from app state.
    Atmosphere that is also a status readout.
 2. **Routing flow** — an SVG rail: *Category -> Assignment Rule ->
    assignmentGroup -> SLA target*, with a token travelling the path on submit
    and re-travelling when a rule changes. It explains the entire product in
    three seconds and becomes the backdrop of the Rules Console.
+   On the landing page it is **interactive rather than animated**: the same four
+   stations are buttons that open what they read, and they re-route live under
+   the hero sandbox.
 3. **Priority matrix** — a real 3x3 impact x urgency heat grid (ServiceNow's
    actual priority derivation), with the selected Case plotted as a pulsing
    marker and a live impact override.
@@ -218,8 +223,16 @@ disabled · loading**, plus **empty** and **error** where it renders data.
 - **Empty / loading / error** — designed per surface. Skeletons shimmer in
   bone tones; an empty state names the surface and the next action.
 
-`#/design` renders every token and every component in every state. It is the
-guardrail, and it doubles as evidence of design-system rigour.
+The guardrail is `styles/tokens.css` itself: it is the only file permitted to
+contain a raw colour or radius, so a value that is not in the token file cannot
+legitimately be used. `lib/viz.jsx`, `components/Aura.jsx` and the set pieces all
+consume semantic roles (`--text-hi`, `--urg-h`, `--aura-high-a`) rather than
+primitives.
+
+> The `#/design` token gallery that used to render every token and component was
+> removed; `styles/tokens.css` is now the single source of truth, and the
+> reduced-motion contract is enforced by `lib/motion.js` plus the global media
+> query in section 23 of `styles.css`.
 
 ---
 

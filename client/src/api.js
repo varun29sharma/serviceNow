@@ -2,26 +2,35 @@
  * Shared API layer.
  *
  * Every function dispatches to either the live Express API or the in-browser
- * demo. Demo mode is the primary stage surface, so the rule console, the
- * deflection loop and the priority matrix must all work with no server at all
- * — that parity is a hard requirement, not a nice-to-have.
+ * demo. The offline engine is the primary stage surface, so the rule console,
+ * the deflection loop and the priority matrix must all work with no server at
+ * all — that parity is a hard requirement, not a nice-to-have.
  *
- * Which backend is used is decided per call (`isDemoMode()` inside each
- * function) rather than once at import time, because sessionStorage flags do
- * not survive a preview reload.
+ * Which backend is used is decided per call, from the connection store in
+ * lib/connection.js. That store probes /api/health once at boot and falls back
+ * to the offline engine when nothing answers, so by the time any of these
+ * functions run the mode is settled and truthful.
  */
 import * as demo from './demoApi.js';
+import { API_BASE, isOfflineEngine, reconnect } from './lib/connection.js';
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:4000';
+// Re-exported for the components that report connection state in the topbar.
+export { API_BASE, reconnect };
 
 export const CATEGORIES = ['Mental Health', 'Academic', 'Financial', 'Housing', 'Other'];
 export const ASSIGNMENT_GROUPS = ['Counseling', 'Academic Advising', 'Financial Aid', 'Peer Support'];
 export const URGENCIES = ['Low', 'Medium', 'High'];
 export const STATUSES = ['New', 'Assigned', 'In Progress', 'Resolved'];
 
-export const isDemoMode = demo.isDemoMode;
+/**
+ * True when the in-browser engine is serving this call.
+ *
+ * Kept under the historical name because it is referenced from several
+ * components; the decision itself now lives in lib/connection.js.
+ */
+export const isDemoMode = isOfflineEngine;
 
-const useDemo = () => isDemoMode();
+const useDemo = () => isOfflineEngine();
 
 async function request(path, options = {}) {
   let res;
@@ -32,8 +41,8 @@ async function request(path, options = {}) {
     });
   } catch {
     throw new Error(
-      `Cannot reach the TriageNow API at ${API_BASE} — is \`npm run dev:server\` running? ` +
-        `(No backend handy? Add ?demo=1 to the URL for demo mode.)`
+      `Lost the connection to the TriageNow API at ${API_BASE} mid-session. ` +
+        `Reconnect from the topbar, or keep working against the offline engine.`
     );
   }
   const data = await res.json().catch(() => ({}));

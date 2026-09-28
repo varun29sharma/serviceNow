@@ -118,40 +118,10 @@ function rulesResponse(active) {
   };
 }
 
-/**
- * isDemoMode — checked per call, not once at import.
- *
- * Demo mode is detected from `?demo=1` (in the search string or the hash) and
- * then LATCHED into sessionStorage.
- *
- * The latch is essential, not an optimisation. `?demo=1` lives in the hash
- * because the app uses HashRouter, and any internal navigation rewrites the
- * hash without it — so after the very first `navigate()` (submitting a Case
- * does exactly that) the query string is gone. Without the latch the app
- * silently falls back to the live API mid-flow and, offline, throws
- * "Cannot reach the TriageNow API" on the student's own status screen. That is
- * a demo-ending bug on stage, so the flag is written the moment demo mode is
- * first seen.
- *
- * Toggling the mode badge removes the flag, which is the way back to live.
- */
-export function isDemoMode() {
-  try {
-    if (sessionStorage.getItem('triagenow.demo.force') === '1') return true;
-
-    const viaQuery =
-      new URLSearchParams(window.location.search).get('demo') === '1' ||
-      new URLSearchParams(window.location.hash.split('?')[1] || '').get('demo') === '1';
-
-    if (viaQuery) {
-      sessionStorage.setItem('triagenow.demo.force', '1');
-      return true;
-    }
-    return false;
-  } catch {
-    return false;
-  }
-}
+// Detection of *whether* to use this module moved to lib/connection.js, which
+// probes /api/health and falls back here when nothing answers. This module is
+// purely the storage-backed engine now — it makes no judgement about when it
+// should be used.
 
 // --- Cases ------------------------------------------------------------------
 

@@ -11,6 +11,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 
 import { getCase, addCaseNote, subscribeToCaseEvents } from '../api.js';
+import { useAuth } from '../auth/AuthContext.jsx';
+import { ROLE } from '../auth/roles.js';
 import {
   ImpactBadge,
   PriorityBadge,
@@ -32,6 +34,7 @@ const STEP_LABELS = ['New', 'Assigned', 'In Progress', 'Resolved'];
 
 export default function Status() {
   const { id } = useParams();
+  const { session } = useAuth();
   const [kase, setKase] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -109,6 +112,35 @@ export default function Status() {
   }
 
   if (!kase) return null;
+
+  /**
+   * Privacy, stated rather than implied.
+   *
+   * A student session that opens another student's Case gets an explanation,
+   * not a rendered record. This is the strongest privacy claim the build can
+   * honestly make: there is no server-side check (see auth/accounts.js), so the
+   * screen says what happened instead of silently showing someone else's words.
+   */
+  if (session?.role === ROLE.STUDENT && kase.studentAlias !== session.alias) {
+    return (
+      <div className="gate-panel card">
+        <div className="gate-kicker">Not your Case</div>
+        <h1 className="gate-title">Case #{String(kase._id).slice(-6).toUpperCase()} belongs to another student</h1>
+        <p className="gate-body">
+          You are signed in as {session.name}. Student sessions only open their own Cases — the
+          assignmentGroup, the description and the conversation here are not yours to read.
+        </p>
+        <div className="gate-actions">
+          <Link className="btn-primary-large" to="/student">
+            Back to my Cases
+          </Link>
+          <Link className="secondary" to="/login">
+            Switch role
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const currentStep = STEP_LABELS.indexOf(kase.status);
   const publicEntries = (kase.activityStream || []).filter(

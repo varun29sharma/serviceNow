@@ -5,16 +5,34 @@
  * a priority: urgency, impact and priority are all derived by the Assignment
  * Rule, which is the product's core claim.
  *
- * Two safety behaviours sit on this screen:
+ * Three behaviours sit on this screen:
  *   - crisis language raises an immediate support banner WITHOUT blocking
  *     submission (a blocked form is the worst possible outcome here)
  *   - verified Knowledge Base articles surface as the student types, so some
  *     requests are answered before they ever reach a counselor
+ *   - the Assignment Rule runs in a LIVE PREVIEW beside the form, so the student
+ *     watches their own words decide the urgency, the assignmentGroup, the SLA
+ *     target and the matched trigger words before they submit anything.
+ *
+ * That preview is the answer to "is the keyword matching working?" — it used to
+ * be invisible until after a Case existed, which made a working engine look like
+ * a broken one.
  */
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { CATEGORIES, createCase, searchDeflection, recordDeflection } from '../api.js';
+import { useLocation, useNavigate } from 'react-router-dom';
+import {
+  CATEGORIES,
+  createCase,
+  previewRule,
+  searchDeflection,
+  recordDeflection,
+} from '../api.js';
+import { useAuth } from '../auth/AuthContext.jsx';
+import { PriorityBadge, UrgencyBadge } from '../components/ui.jsx';
 import { EmptyState, SkeletonBlock } from '../components/Skeleton.jsx';
+// The crisis lexicon is shared with the routing engine so the banner the student
+// sees and the crisisDetected flag the Case is routed on can never disagree.
+import { detectCrisis } from '../../../server/src/triage/nowAssistEngine.js';
 
 const DEMO_SCENARIOS = [
   {
@@ -47,13 +65,23 @@ const DEMO_SCENARIOS = [
   },
 ];
 
-const CRISIS_PATTERN = /suicide|kill myself|self harm|hurt myself|cant go on|can't go on|want to die/i;
-
 export default function Submit() {
   const navigate = useNavigate();
-  const [studentAlias, setStudentAlias] = useState('');
+  const location = useLocation();
+  const { session } = useAuth();
+  // A signed-in student should not have to retype who they are.
+  const [studentAlias, setStudentAlias] = useState(session?.alias || '');
   const [category, setCategory] = useState('Mental Health');
   const [description, setDescription] = useState('');
+
+  // The home page's sandbox can hand its description over rather than making the
+  // student retype it — one engine, demonstrated and then used for real.
+  useEffect(() => {
+    const handoff = location.state;
+    if (!handoff || !handoff.description) return;
+    if (handoff.category) setCategory(handoff.category);
+    setDescription(handoff.description);
+  }, [location.state]);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -62,7 +90,39 @@ export default function Submit() {
   const [deflected, setDeflected] = useState('');
   const [expandedId, setExpandedId] = useState(null);
 
-  const isCrisis = CRISIS_PATTERN.test(description);
+  const isCrisis = detectCrisis(description);
+
+  // Debounced live preview of the ACTIVE Assignment Rule — the same config the
+  // Rules Console edits, so the student sees the routing that will really happen.
+  const [preview, setPreview] = useState(null);
+  const [previewPending, setPreviewPending] = useState(false);
+
+  useEffect(() => {
+    const text = description.trim();
+    if (text.length < 8) {
+      setPreview(null);
+      setPreviewPending(false);
+      return undefined;
+    }
+    let alive = true;
+    setPreviewPending(true);
+    const timer = setTimeout(async () => {
+      try {
+        const result = await previewRule(category, text);
+        if (alive) setPreview(result);
+      } catch {
+        // The connection banner already explains an unreachable API; a silent
+        // preview is better than a second error inside the form.
+        if (alive) setPreview(null);
+      } finally {
+        if (alive) setPreviewPending(false);
+      }
+    }, 240);
+    return () => {
+      alive = false;
+      clearTimeout(timer);
+    };
+  }, [description, category]);
 
   // Deflection search, debounced. Runs against the KB before a Case exists.
   useEffect(() => {
@@ -228,6 +288,65 @@ export default function Submit() {
             <strong>You do not self-select priority.</strong> Urgency, impact and priority are
             derived from what you write. That is deliberate: students in crisis routinely
             under-report how urgent their situation is.
+          </div>
+
+          {/* Live Assignment Rule preview — the decision before the Case exists. */}
+          <div className="rule-preview" aria-live="polite">
+            <div className="rule-preview-head">
+              <span>Assignment Rule — live preview</span>
+              <span className={`rule-preview-state${preview ? ' settled' : ''}`}>
+                {previewPending ? 'reading your words…' : preview ? 'decision ready' : 'waiting for text'}
+              </span>
+            </div>
+
+            {preview ? (
+              <>
+                <div className="rule-preview-grid">
+                  <div>
+                    <dt>assignmentGroup</dt>
+                    <dd>{preview.assignmentGroup}</dd>
+                  </div>
+                  <div>
+                    <dt>urgency</dt>
+                    <dd>
+                      <UrgencyBadge urgency={preview.urgency} pulse={preview.urgency === 'High'} />
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>SLA target</dt>
+                    <dd>
+                      <span className="rule-preview-sla">{preview.slaHours}h</span>
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>priority</dt>
+                    <dd>
+                      <PriorityBadge priority={preview.priority} />
+                    </dd>
+                  </div>
+                </div>
+
+                <div className="rule-preview-triggers">
+                  {preview.matchedKeywords && preview.matchedKeywords.length > 0 ? (
+                    preview.matchedKeywords.map((keyword) => (
+                      <span className="trigger-chip" key={keyword}>
+                        #{keyword}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="hint">
+                      No trigger words matched yet, so urgency stays at the category baseline. Say
+                      plainly what is happening — that is what the rule reads.
+                    </span>
+                  )}
+                </div>
+              </>
+            ) : (
+              <p className="hint rule-preview-empty">
+                Start describing your situation. The Assignment Rule runs on every keystroke — no
+                model, no guesswork — and shows you exactly which words raised your urgency.
+              </p>
+            )}
           </div>
 
           {error && <div className="notice error" style={{ marginTop: 'var(--s-4)' }}>{error}</div>}

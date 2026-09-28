@@ -171,7 +171,7 @@ function FragmentRow({ row, max, columns }) {
             style={{
               background:
                 cell.value === 0
-                  ? 'rgba(255,255,255,0.03)'
+                  ? 'var(--heat-empty)'
                   : `color-mix(in srgb, var(--signal) ${Math.round(18 + intensity * 72)}%, transparent)`,
             }}
           />

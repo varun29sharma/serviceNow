@@ -196,6 +196,25 @@
   --aura-ink: 0;
   --aura-opacity: 0.5;
 
+  /* Per-urgency aura tones, consumed by components/Aura.jsx.
+     These live here rather than as rgba literals in the component because the
+     aura is atmosphere that MEANS something — same rule as every other colour. */
+  --aura-high-a: rgba(146, 40, 42, 0.9);
+  --aura-high-b: rgba(52, 16, 16, 0.92);
+  --aura-high-opacity: 0.72;
+  --aura-medium-a: rgba(122, 88, 30, 0.85);
+  --aura-medium-b: rgba(46, 34, 12, 0.9);
+  --aura-medium-opacity: 0.56;
+  --aura-low-a: rgba(58, 54, 38, 0.9);
+  --aura-low-b: rgba(26, 24, 16, 0.9);
+  --aura-low-opacity: 0.5;
+  --aura-none-a: rgba(52, 49, 40, 0.88);
+  --aura-none-b: rgba(24, 23, 18, 0.9);
+  --aura-none-opacity: 0.42;
+
+  /* Empty heat-grid cell — the only "nothing here" surface in the app. */
+  --heat-empty: rgba(236, 233, 226, 0.03);
+
   /* Presentation mode (low-contrast rooms): lifts panel luminance a step. */
   --boost: 0%;
 }

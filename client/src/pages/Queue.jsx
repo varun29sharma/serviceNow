@@ -13,6 +13,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
+import { useAuth } from '../auth/AuthContext.jsx';
+import { ROLE, visibleGroups } from '../auth/roles.js';
+import { staffRoster } from '../auth/accounts.js';
+
 import {
   ASSIGNMENT_GROUPS,
   listCasesByGroup,
@@ -45,20 +49,36 @@ import {
 } from '../../../server/src/triage/nowAssistEngine.js';
 import { IMPACTS } from '../../../server/src/triage/priorityMatrix.js';
 
-const STAFF_MEMBERS = [
-  'Unassigned',
-  'Dr. Elena Vance, LCSW',
-  'Marcus Thorne, Academic Advisor',
-  'Sarah Jenkins, Financial Aid Lead',
-  'Jordan Martinez, Student Advocate',
-];
+/**
+ * Assignable staff, DERIVED from the seeded provider accounts rather than a
+ * hardcoded array, so the login screen and this dropdown cannot invent
+ * different people.
+ */
+const STAFF_MEMBERS = staffRoster();
 
 const SLA_WINDOW = { High: 2, Medium: 24, Low: 72 };
 
 export default function Queue() {
   const { group } = useParams();
   const navigate = useNavigate();
-  const activeGroup = group === 'All' || ASSIGNMENT_GROUPS.includes(group) ? group : 'All';
+  const { session } = useAuth();
+
+  const isProvider = session?.role === ROLE.PROVIDER;
+  const openableGroups = visibleGroups(session, ASSIGNMENT_GROUPS);
+
+  /**
+   * A provider session can only ever open its own assignmentGroup. "All" is a
+   * supervisor's view, so it collapses to their group rather than being shown
+   * and then emptied — a scoping rule that is stated, not implied.
+   */
+  const activeGroup = isProvider
+    ? session.group
+    : group === 'All' || ASSIGNMENT_GROUPS.includes(group)
+    ? group
+    : 'All';
+
+  /** Who this session acts as, in the activity stream. */
+  const actor = session?.alias || 'Staff Agent';
 
   const [cases, setCases] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
@@ -89,6 +109,9 @@ export default function Queue() {
     } finally {
       setLoading(false);
     }
+    // `openableGroups` is derived from `session`, so this list is stable for a
+    // given sign-in; included here so the lint rule and the reviewer agree.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeGroup]);
 
   useEffect(() => {
@@ -163,7 +186,7 @@ export default function Queue() {
   async function handleStatusChange(status) {
     if (!selected) return;
     try {
-      replaceCase(await updateCaseStatus(selected._id, { status, author: 'Staff Counselor' }));
+      replaceCase(await updateCaseStatus(selected._id, { status, author: actor }));
     } catch (err) {
       setError(err.message);
     }
@@ -177,7 +200,7 @@ export default function Queue() {
           assignedTo,
           status:
             selected.status === 'New' && assignedTo !== 'Unassigned' ? 'Assigned' : selected.status,
-          author: 'Supervisor',
+          author: actor,
         })
       );
     } catch (err) {
@@ -192,7 +215,7 @@ export default function Queue() {
   async function handleImpactChange(impact) {
     if (!selected || impact === selected.impact) return;
     try {
-      replaceCase(await updateCaseStatus(selected._id, { impact, author: 'Staff Agent' }));
+      replaceCase(await updateCaseStatus(selected._id, { impact, author: actor }));
     } catch (err) {
       setError(err.message);
     }
@@ -212,8 +235,9 @@ export default function Queue() {
     if (!noteText.trim() || !selected) return;
     setSavingNote(true);
     try {
-      const author = noteType === 'work_note' ? 'Staff Work Note' : 'Student Care Team';
-      replaceCase(await addCaseNote(selected._id, { type: noteType, author, text: noteText }));
+      // Author is the signed-in identity, not a generic label — an audit trail
+      // that cannot say who wrote a Work Note is not an audit trail.
+      replaceCase(await addCaseNote(selected._id, { type: noteType, author: actor, text: noteText }));
       setNoteText('');
       setTemplateNotice('');
     } catch (err) {
@@ -266,20 +290,29 @@ export default function Queue() {
         </div>
       </div>
 
-      <div className="group-nav-tabs" role="tablist">
-        {['All', ...ASSIGNMENT_GROUPS].map((g) => (
-          <button
-            key={g}
-            type="button"
-            role="tab"
-            aria-selected={g === activeGroup}
-            className={`group-tab${g === activeGroup ? ' active' : ''}`}
-            onClick={() => navigate(`/queue/${encodeURIComponent(g)}`)}
-          >
-            {g === 'All' ? 'All queues' : g}
-          </button>
-        ))}
-      </div>
+      {isProvider ? (
+        <div className="group-scope-bar">
+          <span className="group-scope-chip">{activeGroup}</span>
+          <span className="hint">
+            Scoped to your assignmentGroup. Moving a Case to another group is the mediator’s call.
+          </span>
+        </div>
+      ) : (
+        <div className="group-nav-tabs" role="tablist">
+          {['All', ...openableGroups].map((g) => (
+            <button
+              key={g}
+              type="button"
+              role="tab"
+              aria-selected={g === activeGroup}
+              className={`group-tab${g === activeGroup ? ' active' : ''}`}
+              onClick={() => navigate(`/queue/${encodeURIComponent(g)}`)}
+            >
+              {g === 'All' ? 'All queues' : g}
+            </button>
+          ))}
+        </div>
+      )}
 
       {error && <div className="notice error">{error}</div>}
 
@@ -427,7 +460,9 @@ export default function Queue() {
                       value={selected.assignedTo || 'Unassigned'}
                       onChange={(e) => handleAssigneeChange(e.target.value)}
                     >
-                      {STAFF_MEMBERS.map((m) => (
+                      {/* A provider assigns within their own group; a mediator
+                          can hand a Case to any group's owner. */}
+                      {(isProvider ? ['Unassigned', session.alias] : STAFF_MEMBERS).map((m) => (
                         <option key={m} value={m}>
                           {m}
                         </option>

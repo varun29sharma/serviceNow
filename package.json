@@ -8,7 +8,7 @@
     "setup": "npm --prefix server install && npm --prefix client install",
     "seed": "npm --prefix server run seed",
     "backtest": "node backtest/backtest.js",
-    "test": "npm --prefix server test",
+    "test": "npm --prefix server test && npm --prefix client test",
     "smoke": "npm --prefix server run smoke",
     "sync:cases": "node scripts/syncBacktestCases.mjs",
     "verify": "npm run sync:cases && npm run backtest && npm test && npm run smoke",

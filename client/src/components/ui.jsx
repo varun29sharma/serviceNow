@@ -14,6 +14,7 @@
 import { useState } from 'react';
 import { STATUSES } from '../api.js';
 import { formatDateTime, slaRemaining } from '../format.js';
+import { useNow } from '../lib/useNow.js';
 import { formatServiceNowPayload, serviceNowEndpoint } from '../../../server/src/triage/nowAssistEngine.js';
 import { PRIORITY_LABELS, PRIORITY_SHORT } from '../../../server/src/triage/priorityMatrix.js';
 
@@ -68,13 +69,21 @@ export function ImpactBadge({ impact }) {
   );
 }
 
-/** SLA pill with live countdown. */
+/**
+ * SLA pill with a live countdown.
+ *
+ * Subscribes to the shared clock (lib/useNow.js) so a queue left open keeps
+ * telling the truth. It used to compute the window once at render, which meant
+ * the pills froze while the SLA rings beside them kept ticking — two answers to
+ * the same question on the same screen.
+ */
 export function SlaPill({ slaTarget, status }) {
+  const now = useNow();
   if (!slaTarget) return null;
   if (status === 'Resolved') {
     return <span className="sla-pill resolved">✓ SLA met</span>;
   }
-  const diffMs = new Date(slaTarget) - new Date();
+  const diffMs = new Date(slaTarget) - new Date(now);
   const overdue = diffMs < 0;
   const atRisk = diffMs > 0 && diffMs < 60 * 60 * 1000;
 

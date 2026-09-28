@@ -14,6 +14,7 @@
 import express from 'express';
 import cors from 'cors';
 import { connectDb } from './db.js';
+import { seedIfEmpty } from './autoSeed.js';
 import requestsRouter from './routes/requests.js';
 import dashboardRouter from './routes/dashboard.js';
 import rulesRouter from './routes/rules.js';
@@ -40,7 +41,24 @@ app.use((err, _req, res, _next) => {
 });
 
 connectDb()
-  .then(() => {
+  .then(async () => {
+    // An empty database used to render every screen as zeroes with no
+    // explanation. Seed it instead — additive only, never a wipe, so
+    // restarting the API can never destroy Cases created during a demo.
+    try {
+      const seeded = await seedIfEmpty({ disabled: process.env.SEED_ON_EMPTY === '0' });
+      if (seeded.cases > 0 || seeded.deflections > 0) {
+        console.log(
+          `[api] Empty collections detected — seeded ${seeded.cases} Cases and ` +
+            `${seeded.deflections} Deflections so the dashboard is not all zeroes.`
+        );
+      }
+    } catch (err) {
+      // A seeding failure must not stop the API: a readable empty state is
+      // better than no server at all.
+      console.error('[api] Auto-seed skipped:', err.message);
+    }
+
     app.listen(PORT, () => console.log(`[api] TriageNow API listening on http://localhost:${PORT}`));
   })
   .catch((err) => {

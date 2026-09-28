@@ -9,8 +9,14 @@ export default defineConfig({
   server: {
     port: 5173,
     fs: {
-      // demoApi.js imports the real triage module from ../server/src
-      allow: ['..'],
+      // The client deliberately imports the REAL engine from ../server/src —
+      // the Assignment Rule, priority matrix, rule schema, scoring and the seed
+      // builder — so the offline engine is the same code as the API's rather
+      // than a mock of it.
+      //
+      // `allow` is narrowed to that directory instead of the old blanket '..',
+      // which exposed the entire parent tree (including .git) to the dev server.
+      allow: ['.', '../server/src'],
     },
   },
 });

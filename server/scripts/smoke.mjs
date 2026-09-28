@@ -58,17 +58,57 @@ const createCase = (studentAlias, category, description) =>
 
 const RANK = { Low: 0, Medium: 1, High: 2 };
 
+const SEED_PORT = 4595;
+const seedUri = `mongodb://127.0.0.1:27017/triagenow_seed_${Date.now()}`;
+const seedBase = `http://localhost:${SEED_PORT}`;
+
+// The body of this suite asserts exact counts, so it needs a genuinely empty
+// database: SEED_ON_EMPTY=0 switches off the boot-time seeding the server
+// otherwise performs on an empty database. That behaviour gets its own section
+// at the end, against a second server and its own database.
 const child = spawn('node', ['src/index.js'], {
   cwd: serverDir,
   env: {
     ...process.env,
     PORT: String(PORT),
     MONGODB_URI: `mongodb://127.0.0.1:27017/triagenow_smoke_${Date.now()}`,
+    SEED_ON_EMPTY: '0',
   },
   stdio: ['ignore', 'pipe', 'pipe'],
 });
 child.stdout.on('data', () => {});
 child.stderr.on('data', (data) => process.stderr.write(`[api] ${data}`));
+
+// --------------------------------------------------------------- second server
+// Used only by the auto-seed section: a fresh database with seeding left ON.
+let seedChild = null;
+
+async function bootSeedServer() {
+  const proc = spawn('node', ['src/index.js'], {
+    cwd: serverDir,
+    env: {
+      ...process.env,
+      PORT: String(SEED_PORT),
+      MONGODB_URI: seedUri,
+    },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  proc.stdout.on('data', () => {});
+  proc.stderr.on('data', (data) => process.stderr.write(`[seed-api] ${data}`));
+
+  for (let i = 0; i < 80; i += 1) {
+    try {
+      const res = await fetch(`${seedBase}/api/health`);
+      if (res.ok) return proc;
+    } catch {
+      /* not listening yet */
+    }
+    await sleep(250);
+  }
+  throw new Error('seed API never became ready');
+}
+
+const getJson = async (url) => (await fetch(url)).json();
 
 try {
   let up = false;
@@ -345,12 +385,58 @@ try {
     `got ${afterReset.body?.assignmentGroup}`
   );
 
+  // ------------------------------------------------------------- auto-seed
+  // The live path used to require a manual `npm run seed` before it showed
+  // anything: boot against a fresh database and every screen read zero with no
+  // explanation. The server now seeds itself when the collections are empty.
+  console.log('\nBoot on an empty database — auto-seed');
+
+  seedChild = await bootSeedServer();
+
+  const seededQueue = await getJson(`${seedBase}/api/requests?group=All`);
+  check(
+    'an empty database is seeded on boot (13 Cases)',
+    Array.isArray(seededQueue) && seededQueue.length === 13,
+    `got ${seededQueue?.length}`
+  );
+  check(
+    'the seeded queue spans all four assignmentGroups',
+    new Set((seededQueue || []).map((c) => c.assignmentGroup)).size === 4,
+    [...new Set((seededQueue || []).map((c) => c.assignmentGroup))].join(',')
+  );
+
+  const seededDash = await getJson(`${seedBase}/api/dashboard`);
+  check('deflection history is seeded too', seededDash.deflectedCount === 15, `got ${seededDash.deflectedCount}`);
+  check(
+    'the seeded dashboard is not all zeroes',
+    seededDash.slaComplianceRate > 0 && seededDash.hoursSaved > 0 && seededDash.total === 13,
+    `total ${seededDash.total}, SLA ${seededDash.slaComplianceRate}%`
+  );
+
+  // Additive, never a wipe-and-reseed: restarting must not duplicate anything,
+  // or the API would corrupt a demo every time it was restarted.
+  seedChild.kill('SIGTERM');
+  await sleep(500);
+  seedChild = await bootSeedServer();
+
+  const afterRestart = await getJson(`${seedBase}/api/requests?group=All`);
+  check(
+    'restarting does not duplicate the seed',
+    afterRestart.length === 13,
+    `got ${afterRestart.length}`
+  );
+
   console.log(`\n${passed} passed, ${failed} failed`);
   if (failed > 0) process.exitCode = 1;
 } catch (err) {
   console.error('SMOKE ERROR:', err.message);
   process.exitCode = 1;
 } finally {
+  if (seedChild) {
+    seedChild.kill('SIGTERM');
+    await sleep(200);
+    seedChild.kill('SIGKILL');
+  }
   child.kill('SIGTERM');
   await sleep(300);
   child.kill('SIGKILL');

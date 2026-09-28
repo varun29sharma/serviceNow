@@ -6,18 +6,17 @@
  * motion (SMIL path animations, canvas, requestAnimationFrame counters) has to
  * check for itself — so this hook is the single place that decision is made.
  *
- * It also reports the manual `data-reduced-motion` flag set by the toggle in
- * the #/design gallery, so the whole team can verify the reduced-motion build
- * without changing OS settings.
+ * The OS setting is the only source. It used to also read a manual
+ * `data-reduced-motion` flag exposed by the old `#/design` gallery; that
+ * gallery and its setter are gone, so the dead second input went with them
+ * rather than leaving a flag nothing could ever set.
  */
 import { useEffect, useState } from 'react';
 
-const MANUAL_EVENT = 'triage:motion';
-
 function readReduced() {
-  if (typeof window === 'undefined' || typeof document === 'undefined') return false;
+  if (typeof window === 'undefined') return false;
   const mq = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)');
-  return Boolean((mq && mq.matches) || document.documentElement.dataset.reducedMotion === 'on');
+  return Boolean(mq && mq.matches);
 }
 
 export function useReducedMotion() {
@@ -25,26 +24,21 @@ export function useReducedMotion() {
 
   useEffect(() => {
     const mq = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (!mq) return undefined;
     const onChange = () => setReduced(readReduced());
 
-    if (mq && mq.addEventListener) mq.addEventListener('change', onChange);
-    else if (mq && mq.addListener) mq.addListener(onChange);
+    // addListener is the pre-Safari-14 spelling; kept so the hook does not
+    // silently stop responding on an older machine at the venue.
+    if (mq.addEventListener) mq.addEventListener('change', onChange);
+    else if (mq.addListener) mq.addListener(onChange);
 
-    window.addEventListener(MANUAL_EVENT, onChange);
     return () => {
-      if (mq && mq.removeEventListener) mq.removeEventListener('change', onChange);
-      else if (mq && mq.removeListener) mq.removeListener(onChange);
-      window.removeEventListener(MANUAL_EVENT, onChange);
+      if (mq.removeEventListener) mq.removeEventListener('change', onChange);
+      else if (mq.removeListener) mq.removeListener(onChange);
     };
   }, []);
 
   return reduced;
-}
-
-/** Set the manual reduced-motion flag (used by the design gallery toggle). */
-export function setReducedMotion(on) {
-  document.documentElement.dataset.reducedMotion = on ? 'on' : 'off';
-  window.dispatchEvent(new Event(MANUAL_EVENT));
 }
 
 /**
