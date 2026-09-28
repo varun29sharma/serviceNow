@@ -9,8 +9,14 @@
  * Label note: the previous build called the assist buttons "GenAI" and "AI
  * Copilot". They fill templates selected by rules; this build says so. Nothing
  * on this screen claims a model made a judgement.
+ *
+ * Role note: escalation is NOT offered to a provider. A provider's job is to
+ * resolve the Case, so they get a set of resolution actions matched to the
+ * situation (see `resolvePresets` in the engine) instead of a control that
+ * hands the work back. Escalate stays on the mediator's surface only, which is
+ * what auth/roles.js has always said.
  */
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../auth/AuthContext.jsx';
@@ -46,6 +52,7 @@ import {
   generateNowAssistDraft,
   generateExecutiveSummary,
   analyzeCaseIntent,
+  resolvePresets,
 } from '../../../server/src/triage/nowAssistEngine.js';
 import { IMPACTS } from '../../../server/src/triage/priorityMatrix.js';
 
@@ -64,6 +71,7 @@ export default function Queue() {
   const { session } = useAuth();
 
   const isProvider = session?.role === ROLE.PROVIDER;
+  const isMediator = session?.role === ROLE.MEDIATOR;
   const openableGroups = visibleGroups(session, ASSIGNMENT_GROUPS);
 
   /**
@@ -95,6 +103,15 @@ export default function Queue() {
   const [modalOpen, setModalOpen] = useState(false);
   const [templateNotice, setTemplateNotice] = useState('');
   const [flashedId, setFlashedId] = useState(null);
+  const [applyingId, setApplyingId] = useState(null);
+
+  /**
+   * The composer lives at the very bottom of the cockpit, thousands of pixels
+   * below the buttons that fill it. Writing into it without moving the viewport
+   * is indistinguishable from a button that does nothing — which is exactly how
+   * this was reported. Every insert now moves to the composer and takes focus.
+   */
+  const composerRef = useRef(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -146,6 +163,16 @@ export default function Queue() {
 
   const selected = cases.find((c) => c._id === selectedId) || cases[0] || null;
   const analysis = selected ? analyzeCaseIntent(selected.description, selected.category) : null;
+
+  /**
+   * Situations this provider can resolve, and — importantly — the situations
+   * they cannot. Escalation is a mediator capability, so the only upward path
+   * offered here is a request for review, which changes nothing but the record.
+   */
+  const presets = useMemo(
+    () => (selected && !isMediator ? resolvePresets(selected) : []),
+    [selected, isMediator]
+  );
 
   const priorityCounts = useMemo(() => {
     const counts = { 1: 0, 2: 0, 3: 0, 4: 0 };
@@ -222,12 +249,110 @@ export default function Queue() {
   }
 
   async function handleEscalate() {
-    if (!selected) return;
+    if (!selected || !isMediator) return;
     try {
       replaceCase(await escalateCase(selected._id));
     } catch (err) {
       setError(err.message);
     }
+  }
+
+  /**
+   * Move the viewport to the composer and put the caret in it.
+   *
+   * Deliberately synchronous, and deliberately not built on
+   * `requestAnimationFrame`. Three things were each separately able to make
+   * this look like a dead button:
+   *
+   *   - Nothing scrolled at all, so the text landed 3,000px below the fold.
+   *   - `focus()` called after a smooth `scrollIntoView` CANCELS that scroll in
+   *     Chromium, so the "obvious" order undoes itself.
+   *   - A smooth scroll is an animation, and an animation needs a live
+   *     compositor. Where there is not one the browser stays exactly where it
+   *     was — silently.
+   *
+   * So: focus first, scroll second, and then check whether the scroll actually
+   * moved anything. If it did not, snap instead of leaving the operator staring
+   * at the button they just pressed.
+   */
+  function focusComposer() {
+    const node = composerRef.current;
+    if (!node) return;
+
+    node.focus({ preventScroll: true });
+
+    const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    const startY = window.scrollY;
+    node.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'center' });
+
+    if (reduced) return;
+    window.setTimeout(() => {
+      const current = composerRef.current;
+      if (!current) return;
+      if (Math.abs(window.scrollY - startY) < 2) {
+        current.scrollIntoView({ behavior: 'auto', block: 'center' });
+      }
+    }, 240);
+  }
+
+  /**
+   * Write into the composer, then GO TO IT. The scroll is the fix: the content
+   * was always being written, it was just being written off-screen.
+   */
+  function insertIntoComposer(text, type, notice) {
+    setNoteType(type);
+    setNoteText(text);
+    setTemplateNotice(notice);
+    focusComposer();
+  }
+
+  /**
+   * Apply a resolution preset: file the internal record, move the Case to the
+   * status the preset owns, and pre-fill the matching student reply so the two
+   * halves of the resolution cannot describe different outcomes.
+   */
+  async function handleApplyPreset(entry) {
+    if (!selected || applyingId) return;
+    setApplyingId(entry.id);
+    setError('');
+    try {
+      let updated = await addCaseNote(selected._id, {
+        type: 'work_note',
+        author: actor,
+        text: `${entry.label}\n${entry.detail}\n\n${entry.workNote}`,
+      });
+      if (entry.status && updated.status !== entry.status) {
+        updated = await updateCaseStatus(updated._id, { status: entry.status, author: actor });
+      }
+      replaceCase(updated);
+      insertIntoComposer(
+        entry.studentReply,
+        'comment',
+        `“${entry.label}” filed as a Work Note and the Case moved to ${entry.status}. ` +
+          'The student reply is drafted below — review it, then send.'
+      );
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setApplyingId(null);
+    }
+  }
+
+  /**
+   * The one upward path a provider legitimately has. It drafts a request for
+   * the mediator — it does not raise the tier, compress the SLA, or change the
+   * urgency, so a provider cannot escalate by calling it something else.
+   */
+  function handleAskMediator() {
+    if (!selected) return;
+    insertIntoComposer(
+      'Request for mediator review.\n\n' +
+        `Reason: <say which part of this Case ${session?.group || 'the group'} cannot resolve>\n\n` +
+        'What has been attempted so far: <resolution already tried, and what the student said>',
+      'work_note',
+      'Request drafted below — replace the two placeholders with the real reason, then post it. ' +
+        'This flags the Case for the supervisor; it does not change its tier.'
+    );
   }
 
   async function handleSendNote(event) {
@@ -249,18 +374,21 @@ export default function Queue() {
 
   function handleInsertTemplate() {
     if (!selected) return;
-    setNoteType('comment');
-    setNoteText(generateNowAssistDraft(selected));
-    setTemplateNotice(
-      `Response template inserted from the ${selected.category} playbook. Review and edit before posting.`
+    insertIntoComposer(
+      generateNowAssistDraft(selected),
+      'comment',
+      `Public reply drafted from the top “${selected.category}” resolution for this Case — ` +
+        'review it, then send.'
     );
   }
 
   function handleInsertSummary() {
     if (!selected) return;
-    setNoteType('work_note');
-    setNoteText(generateExecutiveSummary(selected));
-    setTemplateNotice('Handoff summary generated from this Case record. Edit before saving.');
+    insertIntoComposer(
+      generateExecutiveSummary(selected),
+      'work_note',
+      'Handoff summary assembled from stored Case fields. Edit before saving.'
+    );
   }
 
   return (
@@ -423,14 +551,31 @@ export default function Queue() {
                   </div>
 
                   <div className="cockpit-quick-actions">
-                    <button
-                      className="btn-danger-outline btn-sm"
-                      type="button"
-                      onClick={handleEscalate}
-                      title="Expedite the SLA target and raise the tier"
-                    >
-                      🚨 Escalate
-                    </button>
+                    {/* Escalation is the mediator's protocol. A provider's
+                        control is visibly different AND differently named, so
+                        the two cannot be confused on a projector. */}
+                    {isMediator ? (
+                      <button
+                        className="btn-danger-outline btn-sm"
+                        type="button"
+                        onClick={handleEscalate}
+                        title="Expedite the SLA target and raise the escalation tier"
+                      >
+                        🚨 Escalate
+                      </button>
+                    ) : (
+                      <>
+                        <span className="resolve-role-hint">Provider · resolve</span>
+                        <button
+                          className="ghost-sm"
+                          type="button"
+                          onClick={handleAskMediator}
+                          title="Draft a request for the mediator — does not change the tier"
+                        >
+                          🙋 Ask the mediator
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -471,7 +616,7 @@ export default function Queue() {
                   </div>
 
                   <div className="control-item">
-                    <label htmlFor="cockpit-impact">Impact (drives priority)</label>
+                    <label htmlFor="cockpit-impact">Impact · sets priority</label>
                     <select
                       id="cockpit-impact"
                       value={selected.impact || 'Medium'}
@@ -605,12 +750,85 @@ export default function Queue() {
                     </button>
                   </div>
 
+                  {/* Confirmation next to the button that was pressed. The
+                      composer is far down the page; a notice that only renders
+                      there reads as nothing having happened. */}
+                  {templateNotice && (
+                    <div className="assist-notice" role="status">
+                      <span className="assist-notice-text">{templateNotice}</span>
+                      <button type="button" className="assist-notice-jump" onClick={focusComposer}>
+                        Go to composer ↓
+                      </button>
+                    </div>
+                  )}
+
                   <div className="hint" style={{ marginTop: 'var(--s-3)' }}>
                     Classification is deterministic keyword matching — no model call, no
                     hallucination path. See <strong>Assignment Rules</strong> for the config behind it.
                   </div>
                 </div>
               </div>
+
+              {/* -------------------------------------------- resolution actions */}
+              {!isMediator && presets.length > 0 && (
+                <div className="card resolve-card">
+                  <div className="resolve-head">
+                    <div>
+                      <div className="card-subhead">Resolve this Case</div>
+                      <p className="resolve-sub">
+                        Actions for <strong>{selected.category}</strong> at{' '}
+                        <strong>{analysis?.sentiment}</strong> sentiment. Each one files the internal
+                        Work Note, sets the status, and drafts the student reply that says the same
+                        thing — so the record and the message cannot disagree.
+                      </p>
+                    </div>
+                    <span className="resolve-badge">
+                      {analysis?.crisisDetected || selected.urgency === 'High'
+                        ? 'Elevated case'
+                        : 'Standard case'}
+                    </span>
+                  </div>
+
+                  <div className="resolve-actions">
+                    {presets.map((entry) => (
+                      <div
+                        key={entry.id}
+                        className={`resolve-action${entry.status === 'Resolved' ? ' resolve-action-closing' : ''}`}
+                      >
+                        <div className="resolve-action-body">
+                          <div className="resolve-action-label">{entry.label}</div>
+                          <div className="resolve-action-detail">{entry.detail}</div>
+                        </div>
+                        <div className="resolve-action-side">
+                          <span
+                            className={`badge badge-status-${entry.status
+                              .toLowerCase()
+                              .replace(/\s+/g, '-')}`}
+                          >
+                            {entry.status}
+                          </span>
+                          <button
+                            type="button"
+                            className="resolve-apply"
+                            disabled={Boolean(applyingId)}
+                            onClick={() => handleApplyPreset(entry)}
+                          >
+                            {applyingId === entry.id ? 'Applying…' : 'Apply'}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="resolve-foot">
+                    <span className="resolve-role-hint">Provider · resolve</span>
+                    <span className="hint">
+                      Escalation is not a provider action here — if this Case genuinely belongs
+                      somewhere else, use <strong>Ask the mediator</strong> in the header and say why.
+                    </span>
+                  </div>
+                </div>
+              )}
 
               <div className="card">
                 <div className="card-subhead">
@@ -689,7 +907,14 @@ export default function Queue() {
                 </div>
 
                 <form className="activity-compose-form" onSubmit={handleSendNote}>
-                  {templateNotice && <div className="notice ok ai-notice">{templateNotice}</div>}
+                  {templateNotice && (
+                    <div className="notice ok ai-notice">
+                      {templateNotice}{' '}
+                      <strong>
+                        Nothing is posted until you press the button below.
+                      </strong>
+                    </div>
+                  )}
 
                   <div className="compose-type-toggle">
                     <button
@@ -709,6 +934,7 @@ export default function Queue() {
                   </div>
 
                   <textarea
+                    ref={composerRef}
                     rows={4}
                     placeholder={
                       noteType === 'work_note'

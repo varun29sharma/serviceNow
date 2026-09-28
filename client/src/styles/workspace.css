@@ -1,0 +1,185 @@
+/* ==========================================================================
+   Workspace — resolution actions and composer assistance
+   --------------------------------------------------------------------------
+   Two things added to the Agent Workspace, both of them consequences of what
+   the role model already said:
+
+     1. `.resolve-card` — the provider's action list. A provider resolves; the
+        list is generated from the Case's category and detected sentiment, so a
+        Housing eviction and a failed midterm do not get the same three buttons.
+     2. `.assist-notice` — confirmation AT the button that was pressed. The
+        composer these buttons fill sits thousands of pixels further down the
+        page, so a notice rendered only there read as "the button is broken".
+   ========================================================================== */
+
+/* ------------------------------------------------------- resolution actions */
+.resolve-card {
+  border-color: var(--violet-line);
+  box-shadow: var(--e-3), inset 0 1px 0 var(--glass-hi);
+}
+
+.resolve-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--s-5);
+}
+
+/* The card-subhead inside the head supplies its own rule and margin, so cancel
+   both here — the rule belongs under the whole head, not under its first line. */
+.resolve-head .card-subhead {
+  margin-bottom: var(--s-2);
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.resolve-sub {
+  max-width: 74ch;
+  margin: 0;
+  font-size: var(--t-body);
+  color: var(--text-mid);
+}
+.resolve-sub strong { color: var(--text-hi); }
+
+.resolve-badge {
+  flex: none;
+  font-size: var(--t-kicker);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-mid);
+  padding: var(--s-1) var(--s-3);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line-2);
+  background: var(--glass-sunken);
+  white-space: nowrap;
+}
+
+.resolve-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(288px, 100%), 1fr));
+  gap: var(--s-3);
+}
+
+.resolve-action {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-4);
+  border-radius: var(--r-lg);
+  background: var(--glass-sunken);
+  border: 1px solid var(--line-2);
+  transition: border-color var(--dur-state) var(--ease), background var(--dur-state) var(--ease);
+}
+.resolve-action:hover {
+  border-color: var(--violet-line);
+  background: var(--glass);
+}
+/* A preset that closes the Case is marked, so "this finishes it" is visible
+   before the click rather than discovered after it. */
+.resolve-action-closing { border-color: var(--st-resolved); background: var(--st-resolved-bg); }
+.resolve-action-closing:hover { border-color: var(--st-resolved); }
+
+.resolve-action-body { display: flex; flex-direction: column; gap: var(--s-1); min-width: 0; }
+
+.resolve-action-label {
+  font-family: var(--font-display);
+  font-size: var(--t-body-lg);
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  color: var(--text-hi);
+}
+
+.resolve-action-detail { font-size: var(--t-label); line-height: 1.6; color: var(--text-mid); }
+
+.resolve-action-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--s-2);
+  flex: none;
+}
+
+.resolve-apply {
+  font: inherit;
+  font-size: var(--t-label);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  white-space: nowrap;
+  padding: var(--s-2) var(--s-4);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--violet-line);
+  background: var(--violet-soft);
+  color: var(--violet);
+  transition: all var(--dur-micro) var(--ease);
+}
+.resolve-apply:not(:disabled):hover { background: rgba(167, 139, 250, 0.26); }
+.resolve-apply:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.resolve-foot {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+  margin-top: var(--s-4);
+  padding-top: var(--s-3);
+  border-top: 1px solid var(--line-1);
+}
+.resolve-foot .hint { flex: 1; min-width: 240px; }
+
+@media (max-width: 620px) {
+  .resolve-action { flex-direction: column; }
+  .resolve-action-side { flex-direction: row; align-items: center; width: 100%; justify-content: space-between; }
+}
+
+/* -------------------------------------------------- composer confirmation */
+.assist-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+  margin-top: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--r-md);
+  background: var(--violet-soft);
+  border: 1px solid var(--violet-line);
+}
+.assist-notice-text {
+  flex: 1;
+  min-width: 200px;
+  font-size: var(--t-label);
+  line-height: 1.6;
+  color: var(--text-hi);
+}
+
+.assist-notice-jump {
+  flex: none;
+  font: inherit;
+  font-size: var(--t-label);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  white-space: nowrap;
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--violet-line);
+  background: transparent;
+  color: var(--violet);
+  transition: all var(--dur-micro) var(--ease);
+}
+.assist-notice-jump:hover { background: var(--violet-soft); }
+
+/* The composer is a textarea the page jumps to, so give it a visible landing
+   mark — otherwise "it scrolled somewhere" is just as confusing as "nothing
+   happened". */
+.activity-compose-form textarea:focus {
+  border-color: var(--violet-line);
+  box-shadow: var(--e-glow);
+}

@@ -1,9 +1,10 @@
 /**
  * Home — the landing page.
  *
- * Editorial hero in the studiors direction: an oversized Cabinet Grotesk
- * headline that reveals line by line, a Zodiak standfirst, and then — instead of
- * an illustration OF the product — the product itself, running.
+ * This route renders OUTSIDE the app shell (see App.jsx): no top bar, no
+ * navigation column, no footer strip. The only chrome it carries is a single
+ * thin row holding the brand mark, the honest connection chip, and one sign-in
+ * link — no navigation, because nothing should compete with the hero.
  *
  * Three things make this page interactive rather than decorative:
  *
@@ -18,12 +19,14 @@
  *      model is legible before anyone commits to an account.
  *
  * prefers-reduced-motion is honoured throughout: reveals render instantly, the
- * sandbox's self-typing scenarios paste instead of typing, and the counters snap.
+ * illustration stops floating, and the counters snap.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import TriageSandbox from '../components/TriageSandbox.jsx';
+import HeroArt from '../components/HeroArt.jsx';
+import { ConnectionChip } from '../components/ConnectionChip.jsx';
 import { CountUp } from '../lib/viz.jsx';
 import { useAuth } from '../auth/AuthContext.jsx';
 import { ROLE, ROLE_ORDER, ROLE_META, roleHome } from '../auth/roles.js';
@@ -31,7 +34,7 @@ import { builtInConfig } from '../../../server/src/rules/ruleSchema.js';
 import { scoreCases } from '../../../server/src/rules/backtestScorePure.js';
 import { BACKTEST_CASES } from '../lib/backtestCases.generated.js';
 
-const LINES = ['Every request', 'becomes a Case', 'Routed in', 'milliseconds.'];
+const HEADLINE = ['Every request', 'becomes a Case.'];
 
 const ROLE_DOOR_COPY = {
   [ROLE.STUDENT]: {
@@ -46,7 +49,7 @@ const ROLE_DOOR_COPY = {
   },
   [ROLE.PROVIDER]: {
     headline: 'I answer the Cases',
-    body: 'Your assignmentGroup’s queue with Student 360, the playbook and the SLA clock.',
+    body: 'Your assignmentGroup’s queue with Student 360, the resolution actions and the SLA clock.',
     action: 'Provider sign-in',
   },
 };
@@ -205,82 +208,99 @@ export default function Home() {
   ];
 
   return (
-    <div className="home-wrap">
-      {/* ------------------------------------------------------------- hero */}
-      <section className="hero" ref={heroRef}>
-        <p className={`hero-kicker ${reduced ? '' : 'reveal'}`} style={{ '--d': '0ms' }}>
-          Student Case triage &amp; routing
-        </p>
+    <div className={`home${reduced ? ' home-reduced' : ''}`}>
+      {/* ------------------------------------------------- the only chrome */}
+      <header className="home-top">
+        <Link to="/" className="home-brand" aria-label="TriageNow home">
+          <span className="brand-mark">NOW</span>
+          <span className="home-brand-text">
+            <span className="home-brand-name">TriageNow</span>
+            <span className="home-brand-sub">Student Case triage &amp; routing</span>
+          </span>
+        </Link>
 
-        <h1 className="hero-title" aria-label={LINES.join(' ')}>
-          {LINES.map((line, i) => (
-            <span
-              key={line}
-              className={`hero-line ${reduced ? '' : 'reveal'}`}
-              style={{ '--d': `${140 + i * 130}ms` }}
-            >
-              {line}
-              {i === 1 && (
-                <span className="hero-accent" aria-hidden="true">
-                  .
-                </span>
-              )}
-            </span>
-          ))}
-        </h1>
-
-        <p className={`hero-standfirst ${reduced ? '' : 'reveal'}`} style={{ '--d': '760ms' }}>
-          Students in distress email five inboxes — or suffer in silence. TriageNow turns every
-          message into a <strong>Case</strong>, reads it with a deterministic{' '}
-          <strong>Assignment Rule</strong>, routes it to the right <strong>assignmentGroup</strong> and
-          starts an <strong>SLA target</strong>. No model calls. Every decision reproducible,
-          auditable, and backtested against 36 labelled Cases.
-        </p>
-
-        <div className={`hero-cta-row ${reduced ? '' : 'reveal'}`} style={{ '--d': '900ms' }}>
-          <Link to="/submit" className="btn-primary-large hero-cta">
-            Raise a Case →
-          </Link>
+        <div className="home-top-right">
+          <ConnectionChip />
           {session ? (
-            <Link to={home} className="secondary hero-cta">
-              Back to my portal
+            <Link to={home} className="home-top-cta">
+              My portal →
             </Link>
           ) : (
-            <Link to="/login" className="secondary hero-cta">
-              Sign in by role
+            <Link to="/login" className="home-top-cta">
+              Sign in →
             </Link>
           )}
-          <Link to="/queue/All" className="ghost hero-cta">
-            Peek at the workspace
-          </Link>
+        </div>
+      </header>
+
+      {/* ------------------------------------------------------------ hero */}
+      <section className="home-hero" ref={heroRef}>
+        <div className="home-hero-copy">
+          <p className={`hero-kicker ${reduced ? '' : 'reveal'}`} style={{ '--d': '0ms' }}>
+            <span className="hero-kicker-dot" aria-hidden="true" />
+            ServiceNow-modelled · Case · assignmentGroup · SLA target
+          </p>
+
+          <h1 className="home-headline" aria-label={HEADLINE.join(' ')}>
+            {HEADLINE.map((line, i) => (
+              <span
+                key={line}
+                className={`hero-line ${reduced ? '' : 'reveal'}`}
+                style={{ '--d': `${120 + i * 130}ms` }}
+              >
+                {line}
+                {i === 0 && <br />}
+              </span>
+            ))}
+          </h1>
+
+          <p className={`home-standfirst ${reduced ? '' : 'reveal'}`} style={{ '--d': '420ms' }}>
+            Students in distress email five inboxes — or suffer in silence. TriageNow turns every
+            message into a <strong>Case</strong>, reads it with a deterministic{' '}
+            <strong>Assignment Rule</strong>, routes it to the right{' '}
+            <strong>assignmentGroup</strong> and starts an <strong>SLA target</strong>.
+          </p>
+
+          <div className={`home-cta-row ${reduced ? '' : 'reveal'}`} style={{ '--d': '560ms' }}>
+            <Link to="/submit" className="btn-primary-large home-cta">
+              Raise a Case →
+            </Link>
+            <Link to="/queue/All" className="home-cta home-cta-quiet">
+              Peek at the workspace
+            </Link>
+          </div>
+
+          <ul className={`home-facts ${reduced ? '' : 'reveal'}`} style={{ '--d': '700ms' }}>
+            <li>
+              <strong>0</strong> model calls
+            </li>
+            <li>
+              <strong>36</strong> labelled Cases backtested
+            </li>
+            <li>
+              <strong>4</strong> assignmentGroups
+            </li>
+            <li>
+              <strong>2h</strong> High-urgency SLA target
+            </li>
+          </ul>
         </div>
 
-        {/* ---- three doors: what each sign-in actually unlocks ---- */}
-        <div className={`hero-doors ${reduced ? '' : 'reveal'}`} style={{ '--d': '1000ms' }}>
-          {ROLE_ORDER.map((role) => {
-            const copy = ROLE_DOOR_COPY[role];
-            const meta = ROLE_META[role];
-            const isMe = session?.role === role;
-            return (
-              <Link
-                key={role}
-                to={isMe ? roleHome(session) : meta.loginPath}
-                className={`hero-door hero-door-${role}${isMe ? ' hero-door-current' : ''}`}
-              >
-                <span className="hero-door-headline">{copy.headline}</span>
-                <span className="hero-door-body">{copy.body}</span>
-                <span className="hero-door-action">
-                  {isMe ? 'Continue →' : copy.action}
-                  <span aria-hidden="true"> ↗</span>
-                </span>
-              </Link>
-            );
-          })}
+        <div className={`home-hero-art ${reduced ? '' : 'reveal'}`} style={{ '--d': '300ms' }}>
+          <HeroArt />
         </div>
       </section>
 
       {/* -------------------------------------------------- the live sandbox */}
       <section className="home-section">
+        <div className="home-section-head">
+          <span className="home-section-kicker">01 · The rule, live</span>
+          <h2>Type a student's problem. Watch it route.</h2>
+          <p>
+            This is the shipped Assignment Rule running on your keystrokes — the same module the
+            API, the CLI harness and the Rules Console call. Nothing here is a mock of the engine.
+          </p>
+        </div>
         <TriageSandbox />
       </section>
 
@@ -289,7 +309,7 @@ export default function Home() {
         {proof.map((stat) => (
           <div className="home-proof-stat" key={stat.label}>
             <span className="home-proof-num">
-              <CountUp value={stat.value} suffix={stat.suffix} /> 
+              <CountUp value={stat.value} suffix={stat.suffix} />
             </span>
             <span className="home-proof-label">{stat.label}</span>
           </div>
@@ -298,47 +318,117 @@ export default function Home() {
 
       {/* ----------------------------------------------------------- score lab */}
       <section className="home-section">
+        <div className="home-section-head">
+          <span className="home-section-kicker">02 · The evidence</span>
+          <h2>Break the rule and watch the accuracy move.</h2>
+          <p>
+            Triage quality is measurable, so it is measured — the shipped config was picked by
+            scoring 105 candidate configs against 36 labelled Cases.
+          </p>
+        </div>
         <ScoreLab />
       </section>
 
-      {/* ----------------------------------------------------- deep-dive cards */}
-      <section className="home-cards" aria-label="Explore the system">
-        <Link to="/rules" className="home-card card reveal-card" style={{ '--i': 0 }}>
-          <span className="home-card-kicker">01 · Configurable records</span>
-          <span className="home-card-title">Assignment Rules</span>
-          <span className="home-card-body">
-            Routing logic admins edit, not code we compiled. Edit a keyword weight and watch the
-            queue re-route — then watch the backtest score move.
-          </span>
-          <span className="home-card-arrow" aria-hidden="true">
-            →
-          </span>
-        </Link>
+      {/* --------------------------------------------------------- role doors */}
+      <section className="home-section">
+        <div className="home-section-head">
+          <span className="home-section-kicker">03 · Three roles, three doors</span>
+          <h2>Three people use this desk, and they are deliberately unequal.</h2>
+          <p>
+            The student who needs help, the mediator who owns routing, and the provider who answers
+            the Case. Each door leads to a genuinely different product — and the guard on each route
+            says so out loud rather than teleporting you somewhere else.
+          </p>
+        </div>
 
-        <Link to="/queue/All" className="home-card card reveal-card" style={{ '--i': 1 }}>
-          <span className="home-card-kicker">02 · Agents</span>
-          <span className="home-card-title">Agent Workspace</span>
-          <span className="home-card-body">
-            Priority-ordered queues, Student 360 context, the impact × urgency matrix, Work Notes vs
-            public Comments, and live SLA rings.
-          </span>
-          <span className="home-card-arrow" aria-hidden="true">
-            →
-          </span>
-        </Link>
-
-        <Link to="/dashboard" className="home-card card reveal-card" style={{ '--i': 2 }}>
-          <span className="home-card-kicker">03 · Leadership</span>
-          <span className="home-card-title">Dashboard</span>
-          <span className="home-card-body">
-            Deflection, SLA adherence, breaches, advisor hours saved — every figure derived from
-            stored Case and Deflection records. None invented.
-          </span>
-          <span className="home-card-arrow" aria-hidden="true">
-            →
-          </span>
-        </Link>
+        <div className="home-doors">
+          {ROLE_ORDER.map((role, i) => {
+            const copy = ROLE_DOOR_COPY[role];
+            const meta = ROLE_META[role];
+            const isMe = session?.role === role;
+            return (
+              <Link
+                key={role}
+                to={isMe ? roleHome(session) : meta.loginPath}
+                className={`home-door home-door-${role}${isMe ? ' home-door-current' : ''}`}
+                style={{ '--i': i }}
+              >
+                <span className="home-door-index">0{i + 1}</span>
+                <span className="home-door-headline">{copy.headline}</span>
+                <span className="home-door-role">{meta.label}</span>
+                <span className="home-door-body">{copy.body}</span>
+                <span className="home-door-action">
+                  {isMe ? 'Continue' : copy.action}
+                  <span aria-hidden="true"> →</span>
+                </span>
+              </Link>
+            );
+          })}
+        </div>
       </section>
+
+      {/* ----------------------------------------------------- deep-dive cards */}
+      <section className="home-section">
+        <div className="home-section-head">
+          <span className="home-section-kicker">04 · Under the hood</span>
+          <h2>Everything the desk runs on.</h2>
+        </div>
+
+        <div className="home-cards" aria-label="Explore the system">
+          <Link to="/rules" className="home-card">
+            <span className="home-card-kicker">Configurable records</span>
+            <span className="home-card-title">Assignment Rules</span>
+            <span className="home-card-body">
+              Routing logic admins edit, not code we compiled. Edit a keyword weight and watch the
+              queue re-route — then watch the backtest score move.
+            </span>
+            <span className="home-card-arrow" aria-hidden="true">
+              →
+            </span>
+          </Link>
+
+          <Link to="/queue/All" className="home-card">
+            <span className="home-card-kicker">Agents</span>
+            <span className="home-card-title">Agent Workspace</span>
+            <span className="home-card-body">
+              Priority-ordered queues, Student 360 context, the impact × urgency matrix, Work Notes
+              vs public Comments, resolution actions and live SLA rings.
+            </span>
+            <span className="home-card-arrow" aria-hidden="true">
+              →
+            </span>
+          </Link>
+
+          <Link to="/dashboard" className="home-card">
+            <span className="home-card-kicker">Leadership</span>
+            <span className="home-card-title">Dashboard</span>
+            <span className="home-card-body">
+              Deflection, SLA adherence, breaches, advisor hours saved — every figure derived from
+              stored Case and Deflection records. None invented.
+            </span>
+            <span className="home-card-arrow" aria-hidden="true">
+              →
+            </span>
+          </Link>
+        </div>
+      </section>
+
+      <footer className="home-foot">
+        <div className="home-foot-row">
+          <span>
+            <strong>Case</strong> · <strong>assignmentGroup</strong> ·{' '}
+            <strong>Assignment Rule</strong> · <strong>SLA target</strong>
+          </span>
+          <span className="home-foot-status">
+            Statuses strictly: <code>New</code> · <code>Assigned</code> ·{' '}
+            <code>In Progress</code> · <code>Resolved</code>
+          </span>
+        </div>
+        <p className="home-foot-note">
+          Deterministic keyword matching over a configurable rule record. No model call is made
+          anywhere in this product, and no Case leaves the browser in the standalone build.
+        </p>
+      </footer>
     </div>
   );
 }

@@ -1,14 +1,24 @@
 /* ==========================================================================
    TriageNow — Design Tokens
    --------------------------------------------------------------------------
-   Art direction: "Editorial Case Desk", after studiors.be.
+   Art direction: "Case Desk". Re-cut after the workspace references — a cool,
+   near-black instrument panel: a slim icon rail beside a labelled sidebar, a
+   grid of large-radius glassy cards, status chips, and one saturated violet
+   accent for anything actionable.
 
-   Canvas is a warm near-black; text is bone; meta text is warm gray.
-   Two type voices: Cabinet Grotesk for display, General Sans for UI, with
-   Zodiak (serif) reserved for long-form student words. Controls are pill-
-   shaped; surfaces are sharp with hairline borders. Chroma is spent almost
-   exclusively on meaning — urgency, status, sentiment, priority — never on
-   decoration. The ServiceNow green remains as the single brand signal.
+   What changed and why:
+
+     * The canvas moved from warm (40–60° ochre) to cool (250–260° violet), so
+       the accent hue is already present in every surface before any colour is
+       spent on it. Greys now read as violet-black rather than brown-black.
+     * The accent is VIOLET, not ochre. Chroma is still spent on meaning, but
+       the meanings are now separated by hue family: violet = "you can act on
+       this", green = "the system is live / healthy", red-amber-green = urgency.
+       Those three never compete.
+     * Radii roughly doubled. Large-radius surfaces are what makes a dense
+       operations screen read as a modern product rather than a spreadsheet.
+     * Glass tokens exist now, because every raised surface is a translucent
+       panel over the ambient aura rather than a flat fill.
 
    Every colour, space, radius, elevation and duration in the app resolves to
    a token here. Do not write raw hex or px values anywhere else — see
@@ -21,35 +31,35 @@
 
 :root {
   /* ---------------------------------------------------------------------
-     Primitive surfaces — warm near-black, ordered by luminance.
-     Hue stays in the 40–60° ochre range so greys read warm, not blue.
+     Primitive surfaces — cool near-black, ordered by luminance.
+     Hue sits at ~250°, so every grey carries a trace of the accent.
      --------------------------------------------------------------------- */
-  --ink-950: #0e0e0d; /* canvas — studiors' exact body background */
-  --ink-925: #121210;
-  --ink-900: #161614; /* shell / topbar / nav */
-  --ink-850: #1b1b19;
-  --ink-800: #20201e; /* panel — default card background */
-  --ink-750: #262623;
-  --ink-700: #2e2e2a; /* raised panel / hover state */
-  --ink-600: #3a3a35;
+  --ink-950: #08080d; /* canvas */
+  --ink-925: #0b0b12;
+  --ink-900: #0f0f17; /* shell chrome / sidebar */
+  --ink-850: #131320;
+  --ink-800: #181827; /* panel — default card background */
+  --ink-750: #1f1f30;
+  --ink-700: #26263a; /* raised panel / hover state */
+  --ink-600: #33334a;
 
-  /* The near-black used ON bone surfaces (inverted panels, dark buttons) */
-  --carbon: #090908;
+  /* The near-black used ON light surfaces (inverted panels, dark buttons) */
+  --carbon: #07070c;
 
   /* ---------------------------------------------------------------------
      Bone — the light. Text, borders, inverted surfaces.
      --------------------------------------------------------------------- */
-  --bone: #ece9e2;      /* studiors' exact foreground */
-  --bone-dim: #b9b6ae;
-  --bone-faint: #8d8a83; /* studiors' meta gray */
+  --bone: #ecebf5;
+  --bone-dim: #b6b4c8;
+  --bone-faint: #8a879c; /* meta gray */
 
   /* ---------------------------------------------------------------------
      Hairlines — on dark, separation is a light line, not a shadow
      --------------------------------------------------------------------- */
-  --line-1: rgba(236, 233, 226, 0.07);  /* subtle divider */
-  --line-2: rgba(236, 233, 226, 0.12);  /* card border */
-  --line-3: rgba(236, 233, 226, 0.28);  /* strong border / control outline */
-  --line-4: rgba(236, 233, 226, 0.55);  /* emphasis rule, hover border */
+  --line-1: rgba(236, 235, 245, 0.07);  /* subtle divider */
+  --line-2: rgba(236, 235, 245, 0.12);  /* card border */
+  --line-3: rgba(236, 235, 245, 0.28);  /* strong border / control outline */
+  --line-4: rgba(236, 235, 245, 0.55);  /* emphasis rule, hover border */
 
   /* ---------------------------------------------------------------------
      Text — four levels, all contrast-checked against --ink-800
@@ -70,11 +80,32 @@
   --signal-line: rgba(98, 217, 140, 0.38);
   --signal-glow: rgba(98, 217, 140, 0.28);
 
-  /* Secondary voice — warm ochre accent for student-facing affordances.
-     studiors pairs its bone with warm metal tones; this is that pairing. */
-  --accent: #d9b36a;
-  --accent-soft: rgba(217, 179, 106, 0.12);
-  --accent-line: rgba(217, 179, 106, 0.4);
+  /* ---------------------------------------------------------------------
+     Accent — the one saturated voice. Violet, per the workspace references.
+     It marks anything the agent can act on and nothing else: primary buttons,
+     links, active nav, selected rows, progress. Never used for status.
+     --------------------------------------------------------------------- */
+  --violet: #a78bfa;
+  --violet-strong: #8b5cf6;
+  --violet-deep: #6d3fe0;
+  --violet-soft: rgba(167, 139, 250, 0.14);
+  --violet-line: rgba(167, 139, 250, 0.42);
+  --violet-glow: rgba(139, 92, 246, 0.34);
+  --violet-ink: #0d0a1a; /* text on a filled violet chip */
+
+  --accent: var(--violet);
+  --accent-soft: var(--violet-soft);
+  --accent-line: var(--violet-line);
+
+  /* ---------------------------------------------------------------------
+     Glass — every raised surface is translucent over the ambient aura.
+     --glass is the fill, --glass-hi the top-edge highlight that sells it.
+     --------------------------------------------------------------------- */
+  --glass: rgba(24, 24, 39, 0.72);
+  --glass-raised: rgba(31, 31, 48, 0.82);
+  --glass-sunken: rgba(11, 11, 18, 0.66);
+  --glass-hi: rgba(236, 235, 245, 0.08);
+  --glass-blur: blur(22px) saturate(150%);
 
   /* ---------------------------------------------------------------------
      Urgency — the triage output. Saturated, unmistakable, never decorative.
@@ -117,13 +148,15 @@
   --pri-4: #8d8a83;
 
   /* ---------------------------------------------------------------------
-     Radii — the studiors signature: pills for controls, sharp for surfaces.
+     Radii — large radius is the signature. Pills for controls, generous
+     rounding for every surface, and one "hero" step for banners and cards.
      --------------------------------------------------------------------- */
-  --r-xs: 3px;
-  --r-sm: 5px;
-  --r-md: 8px;
-  --r-lg: 12px;
-  --r-xl: 18px;
+  --r-xs: 6px;
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 18px;
+  --r-xl: 24px;
+  --r-2xl: 30px;  /* hero banner, glass shelf */
   --r-pill: 99px;  /* every button, chip, tab, badge */
   --r-full: 999px; /* alias kept for existing rules */
 
@@ -147,10 +180,12 @@
      Elevation — studiors is a flat, editorial world: hairlines over shadows.
      Keep faint inner highlights for depth on interactive controls only.
      --------------------------------------------------------------------- */
-  --e-1: inset 0 1px 0 rgba(236, 233, 226, 0.04);
-  --e-2: inset 0 1px 0 rgba(236, 233, 226, 0.05), 0 1px 2px rgba(0, 0, 0, 0.35);
-  --e-3: inset 0 1px 0 rgba(236, 233, 226, 0.06), 0 10px 30px -10px rgba(0, 0, 0, 0.55);
-  --e-glow: 0 0 0 1px var(--signal-line), 0 0 24px -6px var(--signal-glow);
+  --e-1: inset 0 1px 0 rgba(236, 235, 245, 0.05);
+  --e-2: inset 0 1px 0 rgba(236, 235, 245, 0.06), 0 1px 2px rgba(0, 0, 0, 0.4);
+  --e-3: inset 0 1px 0 rgba(236, 235, 245, 0.07), 0 18px 44px -18px rgba(0, 0, 0, 0.75);
+  --e-4: 0 28px 70px -28px rgba(0, 0, 0, 0.85), 0 2px 10px rgba(0, 0, 0, 0.4);
+  --e-glow: 0 0 0 1px var(--violet-line), 0 0 28px -6px var(--violet-glow);
+  --e-glow-signal: 0 0 0 1px var(--signal-line), 0 0 24px -6px var(--signal-glow);
 
   /* ---------------------------------------------------------------------
      Type — the studiors trio, self-hosted from Fontshare.
@@ -189,10 +224,16 @@
   --shell-max: 1440px;
   --shell-pad: 24px;
 
+  /* Shell chrome widths — the icon rail plus the labelled sidebar, and the
+     height of the sticky top strip inside the content column. */
+  --rail-w: 68px;
+  --side-w: 232px;
+  --topstrip-h: 60px;
+
   /* Ambient aura hue — driven from app state, animated in styles.css.
      Calm warm-black -> amber -> red as the highest live urgency rises. */
-  --aura-a: #26221a;
-  --aura-b: #14130f;
+  --aura-a: #221c33;
+  --aura-b: #100d1a;
   --aura-ink: 0;
   --aura-opacity: 0.5;
 
@@ -202,18 +243,18 @@
   --aura-high-a: rgba(146, 40, 42, 0.9);
   --aura-high-b: rgba(52, 16, 16, 0.92);
   --aura-high-opacity: 0.72;
-  --aura-medium-a: rgba(122, 88, 30, 0.85);
-  --aura-medium-b: rgba(46, 34, 12, 0.9);
+  --aura-medium-a: rgba(122, 84, 30, 0.85);
+  --aura-medium-b: rgba(44, 32, 14, 0.9);
   --aura-medium-opacity: 0.56;
-  --aura-low-a: rgba(58, 54, 38, 0.9);
-  --aura-low-b: rgba(26, 24, 16, 0.9);
+  --aura-low-a: rgba(56, 48, 46, 0.9);
+  --aura-low-b: rgba(24, 20, 26, 0.9);
   --aura-low-opacity: 0.5;
-  --aura-none-a: rgba(52, 49, 40, 0.88);
-  --aura-none-b: rgba(24, 23, 18, 0.9);
-  --aura-none-opacity: 0.42;
+  --aura-none-a: rgba(46, 40, 66, 0.9);
+  --aura-none-b: rgba(19, 16, 29, 0.92);
+  --aura-none-opacity: 0.46;
 
   /* Empty heat-grid cell — the only "nothing here" surface in the app. */
-  --heat-empty: rgba(236, 233, 226, 0.03);
+  --heat-empty: rgba(236, 235, 245, 0.03);
 
   /* Presentation mode (low-contrast rooms): lifts panel luminance a step. */
   --boost: 0%;
@@ -222,15 +263,18 @@
 /* Presentation toggle — see the topbar control. Raises every surface one
    luminance step so dark UI survives a washed-out projector. */
 :root[data-presentation="on"] {
-  --ink-950: #141412;
-  --ink-925: #191917;
-  --ink-900: #1f1f1c;
-  --ink-850: #252522;
-  --ink-800: #2b2b27;
-  --ink-750: #33332e;
-  --ink-700: #3c3c36;
-  --ink-600: #4a4a42;
-  --text-mid: #cbc8c0;
-  --text-lo: #a3a099;
+  --ink-950: #101019;
+  --ink-925: #141420;
+  --ink-900: #191926;
+  --ink-850: #1e1e2d;
+  --ink-800: #242434;
+  --ink-750: #2c2c40;
+  --ink-700: #35354b;
+  --ink-600: #454560;
+  --text-mid: #c9c7d8;
+  --text-lo: #a19fb4;
+  --glass: rgba(30, 30, 45, 0.86);
+  --glass-raised: rgba(38, 38, 56, 0.92);
+  --glass-sunken: rgba(16, 16, 25, 0.8);
   --aura-opacity: 0.38;
 }

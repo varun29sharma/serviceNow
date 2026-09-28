@@ -1,0 +1,862 @@
+/* ==========================================================================
+   Home — the landing page
+   --------------------------------------------------------------------------
+   This page renders outside the app shell (see App.jsx). It has no navigation
+   column and no footer strip; the only chrome is one thin top row holding the
+   brand mark, the connection chip and a single sign-in link. Nothing on this
+   page competes with the headline.
+
+   The layout is a two-column hero — copy left, illustration right — that folds
+   to a single column under 1080px, with the illustration AFTER the copy so a
+   phone reader meets the message before the picture.
+   ========================================================================== */
+
+.home {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: var(--shell-max);
+  margin: 0 auto;
+  padding: 0 var(--shell-pad) var(--s-10);
+}
+
+/* ==========================================================================
+   The only chrome
+   ========================================================================== */
+
+.home-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  padding: var(--s-5) 0;
+  flex-wrap: wrap;
+}
+
+.home-brand { display: flex; align-items: center; gap: var(--s-3); text-decoration: none; }
+.home-brand:hover { text-decoration: none; }
+.home-brand-text { display: flex; flex-direction: column; }
+.home-brand-name {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 16.5px;
+  letter-spacing: -0.01em;
+  color: var(--text-hi);
+  line-height: 1.15;
+}
+.home-brand-sub { font-size: var(--t-label); color: var(--text-lo); }
+
+.home-top-right { display: flex; align-items: center; gap: var(--s-3); }
+
+.home-top-cta {
+  font-size: 12.5px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--text-hi);
+  padding: var(--s-2) var(--s-4);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line-2);
+  background: var(--glass-sunken);
+  transition: all var(--dur-micro) var(--ease);
+}
+.home-top-cta:hover {
+  text-decoration: none;
+  border-color: var(--violet-line);
+  color: var(--violet);
+  background: var(--violet-soft);
+}
+
+/* ==========================================================================
+   Hero
+   ========================================================================== */
+
+.home-hero {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: var(--s-9);
+  align-items: center;
+  padding: var(--s-8) 0 var(--s-9);
+  /* The wash below deliberately bleeds past the hero's edges. Clip it here, or
+     the bleed becomes real horizontal scroll on the whole document. */
+  overflow-x: clip;
+}
+
+/* A single violet wash behind the whole hero, so the illustration sits in the
+   same light as the page rather than on top of it. */
+.home-hero::before {
+  content: '';
+  position: absolute;
+  inset: -8% -20% 12%;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(620px 420px at 76% 34%, rgba(139, 92, 246, 0.2) 0%, transparent 68%),
+    radial-gradient(520px 380px at 12% 8%, rgba(167, 139, 250, 0.1) 0%, transparent 70%);
+}
+
+/* Both columns sit above the wash. Explicit rather than assumed, because the
+   wash is a positioned sibling and would otherwise cover them. */
+.home-hero-copy,
+.home-hero-art { position: relative; z-index: 1; }
+
+.home-hero-copy { display: flex; flex-direction: column; align-items: flex-start; }
+
+/* ---- reveal choreography ----
+   The hero eases in a line at a time. `--d` is the per-element delay, set
+   inline by Home.jsx; under prefers-reduced-motion the class is simply never
+   applied, so nothing has to be un-animated after the fact. */
+.reveal {
+  opacity: 0;
+  transform: translateY(14px);
+  animation: heroReveal 0.7s var(--ease) forwards;
+  animation-delay: var(--d, 0ms);
+}
+@keyframes heroReveal {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ---- kicker ---- */
+.hero-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--t-label);
+  font-weight: 650;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-mid);
+  margin: 0 0 var(--s-5);
+  padding: var(--s-2) var(--s-4);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--violet-line);
+  background: var(--violet-soft);
+}
+/* The old rule drew a hairline after the kicker with ::after; the pill above
+   replaces that, so the pseudo-element has to be cancelled, not inherited. */
+.hero-kicker::after { content: none; }
+.hero-kicker-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--r-full);
+  background: var(--violet);
+  box-shadow: 0 0 10px var(--violet-glow);
+  flex: none;
+}
+
+/* ---- headline ---- */
+.home-headline {
+  font-family: var(--font-display);
+  font-size: clamp(40px, 6.4vw, 80px);
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  font-weight: 800;
+  margin: 0 0 var(--s-6);
+  max-width: 15ch;
+}
+.hero-line { display: inline; }
+.hero-line + .hero-line { display: block; }
+
+.home-standfirst {
+  font-family: var(--font-serif);
+  font-size: 18.5px;
+  line-height: 1.68;
+  color: var(--text-mid);
+  max-width: 58ch;
+  margin: 0 0 var(--s-6);
+}
+.home-standfirst strong { color: var(--text-hi); font-weight: 600; }
+
+/* ---- calls to action ---- */
+.home-cta-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--s-6);
+}
+.home-cta { text-decoration: none; }
+.home-cta:hover { text-decoration: none; }
+.home-cta-quiet {
+  font-size: 12.5px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-mid);
+  padding: var(--s-3) var(--s-5);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line-2);
+  background: var(--glass-sunken);
+  transition: all var(--dur-micro) var(--ease);
+}
+.home-cta-quiet:hover { color: var(--text-hi); border-color: var(--line-3); }
+
+.btn-primary-large.home-cta {
+  background: linear-gradient(135deg, var(--violet) 0%, var(--violet-strong) 58%, var(--violet-deep) 100%);
+  color: var(--violet-ink);
+  box-shadow: var(--e-glow);
+  border: 0;
+}
+.btn-primary-large.home-cta:hover {
+  background: linear-gradient(135deg, #b9a4fb 0%, var(--violet-strong) 58%, var(--violet-deep) 100%);
+}
+
+/* ---- the four hard facts, in one line ---- */
+.home-facts {
+  display: flex;
+  align-items: center;
+  gap: var(--s-5);
+  flex-wrap: wrap;
+  list-style: none;
+  margin: 0;
+  padding: var(--s-4) 0 0;
+  border-top: 1px solid var(--line-1);
+  font-size: var(--t-label);
+  color: var(--text-lo);
+}
+.home-facts li { display: flex; align-items: baseline; gap: 6px; }
+.home-facts strong {
+  font-family: var(--font-display);
+  font-size: var(--t-body-lg);
+  font-weight: 800;
+  color: var(--text-hi);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ==========================================================================
+   The illustration
+   ========================================================================== */
+
+.home-hero-art { display: grid; place-items: center; min-width: 0; }
+.hero-art { width: 100%; max-width: 620px; height: auto; display: block; }
+
+/* Each orbiting object drifts on its own offset so the group never reads as a
+   single rigid block. Durations are prime-ish and coprime so the loop does not
+   visibly reset. */
+.hero-art-float-a { animation: heroFloat 9s var(--ease) infinite; transform-origin: 50% 60%; }
+.hero-art-float-b { animation: heroFloat 7s var(--ease) infinite; animation-delay: -1.2s; }
+.hero-art-float-c { animation: heroFloat 8s var(--ease) infinite; animation-delay: -2.6s; }
+.hero-art-float-d { animation: heroFloat 6.5s var(--ease) infinite; animation-delay: -3.4s; }
+.hero-art-float-e { animation: heroFloat 7.5s var(--ease) infinite; animation-delay: -0.6s; }
+@keyframes heroFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-11px); }
+}
+
+.hero-art-shadow { animation: heroShadow 9s var(--ease) infinite; }
+@keyframes heroShadow {
+  0%, 100% { opacity: 0.55; transform: scaleX(1); }
+  50% { opacity: 0.36; transform: scaleX(0.94); }
+}
+
+.hero-art-spark { animation: heroSpark 5s var(--ease) infinite; }
+.hero-art-spark-1 { animation-delay: -1.7s; }
+.hero-art-spark-2 { animation-delay: -3.1s; }
+@keyframes heroSpark {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+
+/* ==========================================================================
+   Sections
+   ========================================================================== */
+
+.home-section { padding: var(--s-9) 0; border-top: 1px solid var(--line-1); }
+
+.home-section-head { max-width: 780px; margin-bottom: var(--s-6); }
+.home-section-kicker {
+  display: block;
+  font-size: var(--t-kicker);
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--violet);
+  margin-bottom: var(--s-3);
+}
+.home-section-head h2 {
+  font-size: clamp(26px, 3.4vw, var(--t-display));
+  line-height: 1.1;
+  letter-spacing: -0.028em;
+  margin-bottom: var(--s-3);
+}
+.home-section-head p { color: var(--text-mid); max-width: 66ch; margin: 0; }
+
+/* ==========================================================================
+   Proof strip — big numerals, one shelf
+   ========================================================================== */
+
+.home-proof {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: var(--s-4);
+  margin: var(--s-6) 0 var(--s-8);
+}
+.home-proof-stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  padding: var(--s-5);
+  border-radius: var(--r-xl);
+  background: var(--glass);
+  border: 1px solid var(--line-2);
+  box-shadow: var(--e-3);
+}
+.home-proof-num {
+  font-family: var(--font-display);
+  font-size: clamp(34px, 4.4vw, 48px);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1;
+  color: var(--text-hi);
+  font-variant-numeric: tabular-nums;
+}
+.home-proof-label {
+  font-size: var(--t-label);
+  color: var(--text-lo);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* ==========================================================================
+   Three role doors
+   ========================================================================== */
+
+.home-doors {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+  gap: var(--s-4);
+}
+.home-door {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: var(--s-6);
+  border-radius: var(--r-xl);
+  background: var(--glass);
+  border: 1px solid var(--line-2);
+  box-shadow: var(--e-3);
+  text-decoration: none;
+  overflow: hidden;
+  transition: transform var(--dur-state) var(--ease), border-color var(--dur-state) var(--ease),
+    box-shadow var(--dur-state) var(--ease);
+}
+.home-door::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: var(--door-accent, var(--violet));
+  opacity: 0.85;
+}
+.home-door:hover {
+  text-decoration: none;
+  transform: translateY(-3px);
+  border-color: var(--line-3);
+  box-shadow: var(--e-4);
+}
+.home-door-student { --door-accent: var(--accent); }
+.home-door-mediator { --door-accent: var(--signal); }
+.home-door-provider { --door-accent: var(--st-new); }
+.home-door-current {
+  border-color: var(--violet-line);
+  box-shadow: var(--e-glow);
+}
+
+.home-door-index {
+  font-family: var(--font-mono);
+  font-size: var(--t-label);
+  color: var(--text-lo);
+  letter-spacing: 0.1em;
+}
+.home-door-headline {
+  font-family: var(--font-display);
+  font-size: var(--t-title);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-hi);
+}
+.home-door-role {
+  font-size: var(--t-kicker);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--door-accent, var(--violet));
+}
+.home-door-body { font-size: var(--t-body); line-height: 1.6; color: var(--text-mid); flex: 1; }
+.home-door-action {
+  margin-top: var(--s-3);
+  font-size: var(--t-label);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-hi);
+}
+
+/* ==========================================================================
+   Deep-dive cards
+   ========================================================================== */
+
+.home-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+  gap: var(--s-4);
+}
+.home-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: var(--s-6);
+  border-radius: var(--r-xl);
+  background: var(--glass);
+  border: 1px solid var(--line-2);
+  box-shadow: var(--e-3);
+  text-decoration: none;
+  transition: transform var(--dur-state) var(--ease), border-color var(--dur-state) var(--ease);
+}
+.home-card:hover {
+  text-decoration: none;
+  transform: translateY(-3px);
+  border-color: var(--violet-line);
+}
+.home-card-kicker {
+  font-size: var(--t-kicker);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--violet);
+}
+.home-card-title {
+  font-family: var(--font-display);
+  font-size: var(--t-title);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-hi);
+}
+.home-card-body { font-size: var(--t-body); line-height: 1.6; color: var(--text-mid); flex: 1; }
+.home-card-arrow {
+  margin-top: var(--s-3);
+  font-size: var(--t-title);
+  color: var(--violet);
+  transition: transform var(--dur-state) var(--ease);
+}
+.home-card:hover .home-card-arrow { transform: translateX(5px); }
+
+/* ==========================================================================
+   Footer note
+   ========================================================================== */
+
+.home-foot {
+  margin-top: var(--s-9);
+  padding-top: var(--s-6);
+  border-top: 1px solid var(--line-1);
+}
+.home-foot-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s-4);
+  flex-wrap: wrap;
+  font-size: var(--t-label);
+  color: var(--text-lo);
+}
+.home-foot-status code {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-mid);
+  background: rgba(236, 235, 245, 0.05);
+  border: 1px solid var(--line-1);
+  padding: 1px 5px;
+  border-radius: var(--r-xs);
+  margin: 0 1px;
+}
+.home-foot-note {
+  margin: var(--s-4) 0 0;
+  max-width: 82ch;
+  font-size: var(--t-label);
+  line-height: 1.7;
+  color: var(--text-lo);
+}
+
+/* ==========================================================================
+   16. The live sandbox — the hero's real set piece
+   --------------------------------------------------------------------------
+   Not a mock: this is the shipped Assignment Rule module, re-run on every
+   keystroke. Class names are unchanged from the previous build.
+   ========================================================================== */
+
+.sandbox { display: flex; flex-direction: column; gap: var(--s-5); }
+.sandbox-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: var(--s-5);
+  flex-wrap: wrap;
+}
+.sandbox-kicker {
+  font-size: var(--t-kicker);
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--signal);
+  margin-bottom: var(--s-2);
+}
+.sandbox-title { font-size: var(--t-display); margin-bottom: var(--s-2); }
+.sandbox-sub { max-width: 68ch; color: var(--text-mid); }
+.sandbox-hint-keys { font-size: var(--t-label); color: var(--text-lo); white-space: nowrap; }
+.sandbox-hint-keys kbd {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: var(--ink-700);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-xs);
+  padding: 1px 5px;
+  color: var(--text-hi);
+}
+
+.sandbox-inputs {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: var(--s-4);
+  align-items: start;
+}
+.sandbox-field { display: flex; flex-direction: column; gap: var(--s-2); min-width: 0; }
+.sandbox-field-grow { min-width: 0; }
+.sandbox-head-text { min-width: 0; }
+.sandbox-field > span {
+  font-size: var(--t-label);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-lo);
+}
+.sandbox-field textarea {
+  font-family: var(--font-ui);
+  font-size: var(--t-body-lg);
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.sandbox-scenarios { display: flex; align-items: center; gap: var(--s-2); flex-wrap: wrap; }
+.sandbox-scenarios-label { font-size: var(--t-label); color: var(--text-lo); }
+.sandbox-scenario {
+  font: inherit;
+  font-size: var(--t-label);
+  font-weight: 600;
+  cursor: pointer;
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-pill);
+  color: var(--text-mid);
+  background: transparent;
+  border: 1px solid var(--line-2);
+  transition: all var(--dur-micro) var(--ease);
+}
+.sandbox-scenario:hover { color: var(--text-hi); border-color: var(--line-3); }
+.sandbox-scenario.active {
+  color: var(--violet);
+  border-color: var(--violet-line);
+  background: var(--violet-soft);
+}
+
+.sandbox-flow {
+  background: var(--glass-sunken);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-xl);
+  padding: var(--s-4);
+}
+.sandbox-flow-svg { width: 100%; height: auto; display: block; overflow: visible; }
+.sandbox-rail { transition: stroke var(--dur-surface) var(--ease); }
+.sandbox-station { cursor: pointer; }
+.sandbox-station-box {
+  fill: var(--ink-800);
+  stroke: var(--line-2);
+  stroke-width: 1;
+  transition: fill var(--dur-state) var(--ease), stroke var(--dur-state) var(--ease);
+}
+.sandbox-station:hover .sandbox-station-box { stroke: var(--line-4); }
+.sandbox-station.open .sandbox-station-box { stroke: var(--violet); }
+.sandbox-station.live .sandbox-station-box { stroke-width: 1.5; }
+.sandbox-station-box.urgency-High { stroke: var(--urg-h); fill: var(--urg-h-bg); }
+.sandbox-station-box.urgency-Medium { stroke: var(--urg-m); fill: var(--urg-m-bg); }
+.sandbox-station-box.urgency-Low { stroke: var(--urg-l); fill: var(--urg-l-bg); }
+.sandbox-station-dot { fill: var(--signal); }
+.sandbox-station-kicker { font-size: 9px; font-weight: 800; letter-spacing: 0.12em; fill: var(--text-lo); }
+.sandbox-station-value { font-size: 12.5px; font-weight: 700; fill: var(--text-hi); }
+.sandbox-station-detail {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+  margin-top: var(--s-3);
+  padding-top: var(--s-3);
+  border-top: 1px solid var(--line-1);
+  font-size: var(--t-label);
+  color: var(--text-mid);
+}
+.sandbox-station-detail strong {
+  font-size: var(--t-kicker);
+  letter-spacing: 0.12em;
+  color: var(--violet);
+}
+
+.sandbox-readout { display: flex; flex-direction: column; gap: var(--s-4); }
+.sandbox-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--s-3);
+}
+.sandbox-metric {
+  background: var(--glass);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-lg);
+  padding: var(--s-3) var(--s-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+.sandbox-metric dt {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-lo);
+}
+.sandbox-metric dd { margin: 0; font-size: var(--t-body-lg); color: var(--text-hi); }
+.sandbox-metric-strong { font-weight: 700; }
+.sandbox-triggers { display: flex; align-items: center; gap: var(--s-2); flex-wrap: wrap; }
+.sandbox-triggers-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-lo);
+}
+.sandbox-triggers-none { font-size: var(--t-label); color: var(--text-lo); }
+.sandbox-crisis {
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--r-lg);
+  background: var(--urg-h-bg);
+  border: 1px solid var(--urg-h-line);
+  color: var(--text-hi);
+  font-size: var(--t-body);
+}
+/* Category/words mismatch — information, not an alarm. */
+.sandbox-nudge {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  flex-wrap: wrap;
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--r-lg);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-line);
+  color: var(--text-mid);
+  font-size: var(--t-body);
+}
+.sandbox-nudge strong { color: var(--text-hi); }
+.sandbox-nudge > span { flex: 1; min-width: 240px; }
+.sandbox-actions { display: flex; align-items: center; gap: var(--s-4); flex-wrap: wrap; }
+.sandbox-matrix-wrap { border-top: 1px solid var(--line-1); padding-top: var(--s-4); }
+.sandbox-matrix-label { font-size: var(--t-label); color: var(--text-lo); margin-bottom: var(--s-3); }
+.sandbox-matrix { max-width: 440px; }
+.sandbox-matrix-cell { cursor: default; }
+.sandbox-matrix-cell:hover { transform: none; }
+.sandbox-idle {
+  color: var(--text-lo);
+  font-size: var(--t-body-lg);
+  padding: var(--s-6) 0;
+  text-align: center;
+  border: 1px dashed var(--line-2);
+  border-radius: var(--r-lg);
+}
+
+/* ==========================================================================
+   17. Score lab — the backtest on a slider
+   ========================================================================== */
+
+.score-lab { display: flex; flex-direction: column; gap: var(--s-5); }
+.score-lab-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--s-5);
+  flex-wrap: wrap;
+}
+.score-lab-sub { max-width: 70ch; color: var(--text-mid); margin: 0; }
+.score-lab-sub code {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--text-hi);
+  background: rgba(236, 235, 245, 0.05);
+  border: 1px solid var(--line-1);
+  padding: 1px 5px;
+  border-radius: var(--r-xs);
+}
+.score-lab-drift {
+  flex: none;
+  font-size: var(--t-label);
+  font-weight: 700;
+  padding: var(--s-1) var(--s-3);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line-2);
+  color: var(--text-lo);
+}
+.score-lab-drift.up { color: var(--signal); border-color: var(--signal-line); background: var(--signal-soft); }
+.score-lab-drift.down { color: var(--urg-h); border-color: var(--urg-h-line); background: var(--urg-h-bg); }
+/* Stacked rather than two columns: a full-width range input is far easier to
+   aim at than one squeezed into the right half, and the keyword chips belong
+   on their own line above the thing they change. */
+.score-lab-controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+}
+.score-lab-keywords { display: flex; gap: var(--s-2); flex-wrap: wrap; }
+.score-lab-keyword {
+  font: inherit;
+  font-family: var(--font-mono);
+  font-size: var(--t-label);
+  font-weight: 600;
+  cursor: pointer;
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-pill);
+  color: var(--text-mid);
+  background: transparent;
+  border: 1px solid var(--line-2);
+  transition: all var(--dur-micro) var(--ease);
+}
+.score-lab-keyword:hover { color: var(--text-hi); border-color: var(--line-3); }
+.score-lab-keyword.active {
+  color: var(--violet);
+  border-color: var(--violet-line);
+  background: var(--violet-soft);
+}
+.score-lab-slider { display: flex; flex-direction: column; gap: var(--s-2); }
+.score-lab-slider-label {
+  font-size: var(--t-label);
+  color: var(--text-mid);
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-2);
+  flex-wrap: wrap;
+}
+.score-lab-slider-label strong {
+  font-family: var(--font-mono);
+  font-size: var(--t-body-lg);
+  color: var(--text-hi);
+}
+.score-lab-slider-note {
+  font-size: var(--t-kicker);
+  color: var(--text-lo);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+/* The slider is the one place a filled violet track earns its keep: the thumb
+   position is the answer, so the track should read as the scale it is. */
+.score-lab-slider input[type='range'] {
+  width: 100%;
+  cursor: pointer;
+  accent-color: var(--violet-strong);
+}
+.score-lab-slider-scale {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--t-kicker);
+  color: var(--text-lo);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.score-lab-results {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--s-3);
+}
+.score-lab-result {
+  background: var(--glass);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-lg);
+  padding: var(--s-4);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.score-lab-num {
+  font-family: var(--font-display);
+  font-size: var(--t-title);
+  font-weight: 800;
+  color: var(--text-hi);
+  font-variant-numeric: tabular-nums;
+}
+.score-lab-label {
+  font-size: var(--t-kicker);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-lo);
+}
+.score-lab-verdict {
+  font-size: var(--t-body);
+  color: var(--text-mid);
+  padding-top: var(--s-2);
+  border-top: 1px solid var(--line-1);
+}
+.score-lab-verdict strong { color: var(--text-hi); }
+
+/* ==========================================================================
+   Motion — one switch turns the whole page's animation off
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-art-float-a,
+  .hero-art-float-b,
+  .hero-art-float-c,
+  .hero-art-float-d,
+  .hero-art-float-e,
+  .hero-art-shadow,
+  .hero-art-spark {
+    animation: none;
+  }
+  .home-door:hover,
+  .home-card:hover {
+    transform: none;
+  }
+}
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+
+@media (max-width: 1080px) {
+  .home-hero {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--s-7);
+    padding-top: var(--s-7);
+  }
+  /* Copy first, picture second: a phone reader should meet the message before
+     the illustration. `order` makes that explicit rather than relying on
+     source order staying correct. */
+  .home-hero-art { order: 2; }
+  .hero-art { max-width: 520px; }
+  .home-headline { max-width: 20ch; }
+}
+
+@media (max-width: 860px) {
+  .sandbox-inputs { grid-template-columns: minmax(0, 1fr); }
+  .sandbox-matrix { max-width: 100%; }
+  .sandbox-station-detail { align-items: flex-start; }
+}
+
+@media (max-width: 620px) {
+  .home { padding: 0 var(--s-4) var(--s-8); }
+  .home-headline { font-size: clamp(32px, 10vw, 44px); }
+  .home-standfirst { font-size: 16.5px; }
+  .home-facts { gap: var(--s-4) var(--s-5); }
+  .home-proof { grid-template-columns: repeat(auto-fit, minmax(min(140px, 100%), 1fr)); }
+  .home-proof-stat { padding: var(--s-4); }
+  .home-section { padding: var(--s-7) 0; }
+  .home-door,
+  .home-card { padding: var(--s-5); }
+  .home-top-cta { padding: var(--s-2) var(--s-3); }
+}

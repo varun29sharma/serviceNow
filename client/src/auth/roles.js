@@ -69,9 +69,14 @@ export const ROLE_META = {
       'Work your own assignmentGroup’s priority-ordered queue',
       'Override impact (priority re-derives — never set directly)',
       'Post Work Notes vs public Comments, and run the guided playbook',
-      'Escalate a Case into the supervisor’s protocol',
+      'Resolve the Case — pick the resolution that fits the situation and close it out',
     ],
-    cannot: ['See another assignmentGroup’s queue', 'Edit the Assignment Rule', 'See leadership analytics'],
+    cannot: [
+      'Escalate a Case — that is the mediator’s protocol, not a provider action',
+      'See another assignmentGroup’s queue',
+      'Edit the Assignment Rule',
+      'See leadership analytics',
+    ],
   },
 };
 
